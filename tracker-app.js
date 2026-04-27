@@ -257,9 +257,9 @@ function HomeScreen({ latestWeight, meditationStats, onOpen }) {
     <section className="home">
       <article className="card intro-card intro-card-hero">
         <p className="eyebrow">Polaris</p>
-        <h1>A quiet place to track weight and meditation.</h1>
+        <h1>Track weight and meditation.</h1>
         <p className="intro-copy">
-          Two simple trackers. Plenty of space. Nothing extra to manage.
+          Simple tracking, without the clutter.
         </p>
       </article>
 

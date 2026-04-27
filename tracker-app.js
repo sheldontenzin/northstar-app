@@ -255,7 +255,7 @@ function WeightChart({ labels, values, unit }) {
 function HomeScreen({ latestWeight, meditationStats, onOpen }) {
   return (
     <section className="home">
-      <article className="card intro-card">
+      <article className="card intro-card intro-card-hero">
         <p className="eyebrow">Polaris</p>
         <h1>A quiet place to track weight and meditation.</h1>
         <p className="intro-copy">
@@ -290,7 +290,7 @@ function WeightScreen({ entries, form, formError, onFormChange, onSave, onEdit, 
 
   return (
     <section className="tracker-screen">
-      <article className="card screen-card">
+      <article className="card screen-card screen-card-large">
         <div className="section-head">
           <div>
             <p className="eyebrow">Weight</p>
@@ -371,7 +371,7 @@ function MeditationScreen({ entries, form, formError, stats, onFormChange, onSav
 
   return (
     <section className="tracker-screen">
-      <article className="card screen-card">
+      <article className="card screen-card screen-card-large">
         <div className="section-head">
           <div>
             <p className="eyebrow">Meditation</p>
@@ -576,7 +576,7 @@ function App() {
   return (
     <main className="app-shell">
       <header className="topbar">
-        <div>
+        <div className="brand-block">
           <p className="topbar__label">Polaris</p>
         </div>
         <Navigation activeView={activeView} onChange={setActiveView} />

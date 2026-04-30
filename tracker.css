@@ -246,6 +246,13 @@ p {
   border: 1px solid var(--border);
 }
 
+.goal-note {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.65;
+}
+
 .form-stack {
   display: grid;
   gap: 16px;

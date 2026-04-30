@@ -1,6 +1,8 @@
 const { useEffect, useRef, useState } = React;
 
 const STORAGE_KEY = "polaris-lite-v2";
+const WEIGHT_GOAL_MIN = 135;
+const WEIGHT_GOAL_MAX = 137;
 
 function pad(value) {
   return String(value).padStart(2, "0");
@@ -140,6 +142,27 @@ function getWeightChartSeries(entries) {
   };
 }
 
+function getWeightGoalMessage(entry) {
+  if (!entry) {
+    return `Goal range: ${WEIGHT_GOAL_MIN}-${WEIGHT_GOAL_MAX} lb`;
+  }
+
+  const weight = toNumber(entry.weight);
+  if (weight === null) {
+    return `Goal range: ${WEIGHT_GOAL_MIN}-${WEIGHT_GOAL_MAX} lb`;
+  }
+
+  if (weight > WEIGHT_GOAL_MAX) {
+    return `Goal range: ${WEIGHT_GOAL_MIN}-${WEIGHT_GOAL_MAX} lb · ${(weight - WEIGHT_GOAL_MAX).toFixed(1)} lb to reach the top of range`;
+  }
+
+  if (weight < WEIGHT_GOAL_MIN) {
+    return `Goal range: ${WEIGHT_GOAL_MIN}-${WEIGHT_GOAL_MAX} lb · ${(WEIGHT_GOAL_MIN - weight).toFixed(1)} lb to enter the range`;
+  }
+
+  return `Goal range: ${WEIGHT_GOAL_MIN}-${WEIGHT_GOAL_MAX} lb · You're in range`;
+}
+
 function calculateMeditationStats(entries) {
   return {
     totalSessions: entries.length,
@@ -188,12 +211,32 @@ function WeightChart({ labels, values, unit }) {
     const gradient = context.createLinearGradient(0, 0, 0, 240);
     gradient.addColorStop(0, "rgba(92, 186, 183, 0.22)");
     gradient.addColorStop(1, "rgba(92, 186, 183, 0.02)");
+    const finiteValues = values.filter((value) => value !== null);
+    const rangeMin = Math.min(...finiteValues, WEIGHT_GOAL_MIN);
+    const rangeMax = Math.max(...finiteValues, WEIGHT_GOAL_MAX);
+    const padding = Math.max(2, (rangeMax - rangeMin) * 0.3);
+    const suggestedMin = Math.floor(rangeMin - padding);
+    const suggestedMax = Math.ceil(rangeMax + padding);
 
     chartRef.current = new window.Chart(context, {
       type: "line",
       data: {
         labels,
         datasets: [
+          {
+            data: labels.map(() => WEIGHT_GOAL_MIN),
+            borderColor: "rgba(95, 183, 180, 0.24)",
+            borderWidth: 1.5,
+            borderDash: [6, 6],
+            pointRadius: 0,
+          },
+          {
+            data: labels.map(() => WEIGHT_GOAL_MAX),
+            borderColor: "rgba(95, 183, 180, 0.24)",
+            borderWidth: 1.5,
+            borderDash: [6, 6],
+            pointRadius: 0,
+          },
           {
             data: values,
             borderColor: "#59aaa8",
@@ -226,6 +269,8 @@ function WeightChart({ labels, values, unit }) {
             ticks: { color: "#839297", font: { size: 11 } },
           },
           y: {
+            min: suggestedMin,
+            max: suggestedMax,
             grid: { color: "rgba(131, 146, 151, 0.14)" },
             ticks: { color: "#839297", font: { size: 11 } },
           },
@@ -284,9 +329,10 @@ function HomeScreen({ latestWeight, meditationStats, onOpen }) {
   );
 }
 
-function WeightScreen({ entries, form, formError, onFormChange, onSave, onEdit, onDelete }) {
+function WeightScreen({ entries, form, formError, latestWeight, onFormChange, onSave, onEdit, onDelete }) {
   const sortedEntries = getSortedWeightEntries(entries, "desc");
   const chartSeries = getWeightChartSeries(entries);
+  const goalMessage = getWeightGoalMessage(latestWeight);
 
   return (
     <section className="tracker-screen">
@@ -299,6 +345,7 @@ function WeightScreen({ entries, form, formError, onFormChange, onSave, onEdit, 
         </div>
 
         <WeightChart labels={chartSeries.labels} values={chartSeries.values} unit={chartSeries.unit} />
+        <p className="goal-note">{goalMessage}</p>
       </article>
 
       <article className="card panel-card">
@@ -591,6 +638,7 @@ function App() {
           entries={appState.weightEntries}
           form={weightForm}
           formError={weightFormError}
+          latestWeight={latestWeight}
           onFormChange={handleWeightFormChange}
           onSave={handleSaveWeight}
           onEdit={handleEditWeight}

@@ -4,9 +4,16 @@ const STORAGE_KEY = "polaris-lite-v3";
 const WEIGHT_GOAL_MIN = 135;
 const WEIGHT_GOAL_MAX = 137;
 const CELEBRATION_MESSAGES = [
-  "you're getting there sheldon",
-  "you're doing what u said",
-  "you're dangerous, you get shit done",
+  "You said you wanted this, and now you're closer than you've ever been.",
+  "This is what happens when you keep promises to yourself.",
+  "You didn't wait to feel ready. You followed the system.",
+  "Every action was a vote. This is who you're becoming.",
+  "You are becoming someone who does what she says she will do.",
+  "Mood didn't decide this. Your system did.",
+  "You're not hoping anymore. You're proving it.",
+  "This is evidence. You're building the person you said you wanted to become.",
+  "You kept showing up, and now the proof is real.",
+  "You didn't just want it. You acted like it mattered.",
 ];
 
 function pad(value) {

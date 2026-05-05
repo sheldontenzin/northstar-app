@@ -4,16 +4,16 @@ const STORAGE_KEY = "polaris-lite-v3";
 const WEIGHT_GOAL_MIN = 135;
 const WEIGHT_GOAL_MAX = 137;
 const CELEBRATION_MESSAGES = [
-  "You said you wanted this, and now you're closer than you've ever been.",
-  "This is what happens when you keep promises to yourself.",
-  "You didn't wait to feel ready. You followed the system.",
-  "Every action was a vote. This is who you're becoming.",
-  "You are becoming someone who does what she says she will do.",
-  "Mood didn't decide this. Your system did.",
-  "You're not hoping anymore. You're proving it.",
-  "This is evidence. You're building the person you said you wanted to become.",
-  "You kept showing up, and now the proof is real.",
-  "You didn't just want it. You acted like it mattered.",
+  "Sheldon, this is what the fuck happens when you stop waiting to feel ready.",
+  "You kept saying you wanted change. Now you're finally acting like it.",
+  "Sheldon, look at the proof. You actually did the hard shit.",
+  "This wasn't motivation. This was discipline.",
+  "You didn't magically become confident. You built evidence.",
+  "Sheldon, every day you didn't quit brought you here.",
+  "This is what happens when you stop lying to yourself and follow through.",
+  "You're becoming dangerous because you're starting to trust your own word.",
+  "Most people say they want change. Very few actually endure it.",
+  "Sheldon, you're finally becoming someone who can rely on herself.",
 ];
 
 function pad(value) {

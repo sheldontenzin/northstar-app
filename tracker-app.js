@@ -307,13 +307,13 @@ function WeightChart({ labels, values, unit }) {
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: "#839297", font: { size: 11 } },
+            ticks: { color: "rgba(255, 255, 255, 0.7)", font: { size: 11 } },
           },
           y: {
             min: suggestedMin,
             max: suggestedMax,
-            grid: { color: "rgba(131, 146, 151, 0.14)" },
-            ticks: { color: "#839297", font: { size: 11 } },
+            grid: { color: "rgba(255, 255, 255, 0.12)" },
+            ticks: { color: "rgba(255, 255, 255, 0.72)", font: { size: 11 } },
           },
         },
       },
@@ -649,6 +649,11 @@ function App() {
 
   return (
     <main className="app-shell">
+      <div className="bg-orb bg-orb-one" aria-hidden="true" />
+      <div className="bg-orb bg-orb-two" aria-hidden="true" />
+      <div className="bg-orb bg-orb-three" aria-hidden="true" />
+      <div className="bg-orb bg-orb-four" aria-hidden="true" />
+
       <header className="topbar">
         <div className="brand-block">
           <p className="topbar__label">Polaris</p>

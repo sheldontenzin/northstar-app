@@ -1,8 +1,13 @@
 const { useEffect, useRef, useState } = React;
 
-const STORAGE_KEY = "polaris-lite-v2";
+const STORAGE_KEY = "polaris-lite-v3";
 const WEIGHT_GOAL_MIN = 135;
 const WEIGHT_GOAL_MAX = 137;
+const CELEBRATION_MESSAGES = [
+  "you're getting there sheldon",
+  "you're doing what u said",
+  "you're dangerous, you get shit done",
+];
 
 function pad(value) {
   return String(value).padStart(2, "0");
@@ -53,15 +58,6 @@ function createWeightForm(date = getLocalDateKey()) {
   };
 }
 
-function createMeditationForm(date = getLocalDateKey()) {
-  return {
-    id: "",
-    date,
-    durationMinutes: "",
-    notes: "",
-  };
-}
-
 function normalizeWeightEntry(entry) {
   return {
     id: entry?.id || makeId("weight"),
@@ -73,26 +69,16 @@ function normalizeWeightEntry(entry) {
   };
 }
 
-function normalizeMeditationEntry(entry) {
-  return {
-    id: entry?.id || makeId("meditation"),
-    date: entry?.date || getLocalDateKey(),
-    durationMinutes: entry?.durationMinutes ?? "",
-    notes: entry?.notes ?? "",
-    createdAt: entry?.createdAt || Date.now(),
-    updatedAt: entry?.updatedAt || Date.now(),
-  };
-}
-
 function loadAppState() {
   const fallback = {
     weightEntries: [],
-    meditationEntries: [],
+    deepWorkDays: {},
   };
 
   try {
     const raw =
       window.localStorage.getItem(STORAGE_KEY) ||
+      window.localStorage.getItem("polaris-lite-v2") ||
       window.localStorage.getItem("polaris-lite-v1") ||
       window.localStorage.getItem("planner-tracker-v2") ||
       window.localStorage.getItem("planner-tracker-v1");
@@ -105,9 +91,7 @@ function loadAppState() {
 
     return {
       weightEntries: Array.isArray(parsed?.weightEntries) ? parsed.weightEntries.map(normalizeWeightEntry) : [],
-      meditationEntries: Array.isArray(parsed?.meditationEntries)
-        ? parsed.meditationEntries.map(normalizeMeditationEntry)
-        : [],
+      deepWorkDays: parsed?.deepWorkDays && typeof parsed.deepWorkDays === "object" ? parsed.deepWorkDays : {},
     };
   } catch (error) {
     return fallback;
@@ -118,7 +102,7 @@ function saveAppState(state) {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (error) {
-    // ignore
+    // ignore storage failures
   }
 }
 
@@ -163,18 +147,33 @@ function getWeightGoalMessage(entry) {
   return `Goal range: ${WEIGHT_GOAL_MIN}-${WEIGHT_GOAL_MAX} lb · You're in range`;
 }
 
-function calculateMeditationStats(entries) {
-  return {
-    totalSessions: entries.length,
-    totalMinutes: entries.reduce((total, entry) => total + (toNumber(entry.durationMinutes) || 0), 0),
-  };
+function getLowestWeight(entries) {
+  const weights = entries.map((entry) => toNumber(entry.weight)).filter((value) => value !== null);
+  return weights.length ? Math.min(...weights) : null;
+}
+
+function getRecentConsistency(deepWorkDays, days = 14) {
+  return Array.from({ length: days }, (_, index) => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - (days - index - 1));
+    const key = getLocalDateKey(date);
+    return {
+      key,
+      short: date.toLocaleDateString(undefined, { weekday: "narrow" }),
+      done: Boolean(deepWorkDays[key]),
+    };
+  });
+}
+
+function pickCelebrationMessage() {
+  return CELEBRATION_MESSAGES[Math.floor(Math.random() * CELEBRATION_MESSAGES.length)];
 }
 
 function Navigation({ activeView, onChange }) {
   const items = [
     { id: "home", label: "Home" },
     { id: "weight", label: "Weight" },
-    { id: "meditation", label: "Meditation" },
   ];
 
   return (
@@ -190,6 +189,39 @@ function Navigation({ activeView, onChange }) {
         </button>
       ))}
     </nav>
+  );
+}
+
+function ConfettiOverlay({ active }) {
+  if (!active) {
+    return null;
+  }
+
+  const pieces = Array.from({ length: 26 }, (_, index) => ({
+    id: index,
+    left: `${Math.random() * 100}%`,
+    delay: `${Math.random() * 0.35}s`,
+    duration: `${2.2 + Math.random() * 1.6}s`,
+    rotate: `${Math.random() * 320}deg`,
+    color: ["#63b4b1", "#dff4f0", "#f1f0ff", "#eaf7f1", "#ffd87c"][index % 5],
+  }));
+
+  return (
+    <div className="confetti-layer" aria-hidden="true">
+      {pieces.map((piece) => (
+        <span
+          key={piece.id}
+          className="confetti-piece"
+          style={{
+            left: piece.left,
+            animationDelay: piece.delay,
+            animationDuration: piece.duration,
+            backgroundColor: piece.color,
+            transform: `rotate(${piece.rotate})`,
+          }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -297,45 +329,85 @@ function WeightChart({ labels, values, unit }) {
   );
 }
 
-function HomeScreen({ latestWeight, meditationStats, onOpen }) {
+function HomeScreen({ latestWeight, deepWorkToday, recentConsistency, onOpenWeight, onSetDeepWork }) {
   return (
     <section className="home">
       <article className="card intro-card intro-card-hero">
         <p className="eyebrow">Polaris</p>
-        <h1>Track weight and meditation.</h1>
+        <h1>Track weight and keep the day alive.</h1>
         <p className="intro-copy">
-          Simple tracking, without the clutter.
+          Weight progress on one side. No-zero-days consistency on the other.
         </p>
       </article>
 
       <div className="home-grid">
-        <button type="button" className="card home-card" onClick={() => onOpen("weight")}>
+        <button type="button" className="card home-card" onClick={onOpenWeight}>
           <p className="eyebrow">Weight</p>
           <h2>{latestWeight ? `${latestWeight.weight} ${latestWeight.unit}` : "Add your first entry"}</h2>
-          <p>{latestWeight ? `Latest log from ${formatLongDate(latestWeight.date)}` : "Track weight over time with one simple graph."}</p>
-        </button>
-
-        <button type="button" className="card home-card" onClick={() => onOpen("meditation")}>
-          <p className="eyebrow">Meditation</p>
-          <h2>{meditationStats.totalSessions ? `${meditationStats.totalSessions} sessions` : "Start with 3 minutes"}</h2>
           <p>
-            {meditationStats.totalSessions
-              ? `${meditationStats.totalMinutes} total minutes logged`
-              : "Log a session with a date, duration, and optional note."}
+            {latestWeight ? `Latest log from ${formatLongDate(latestWeight.date)}` : "Track weight over time with one simple graph."}
           </p>
         </button>
+
+        <article className="card home-card deep-work-card">
+          <p className="eyebrow">Deep work / no zero days</p>
+          <h2>Did you work on something today?</h2>
+          <div className="consistency-actions">
+            <button
+              type="button"
+              className={`consistency-button ${deepWorkToday ? "active" : ""}`}
+              onClick={() => onSetDeepWork(true)}
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              className={`consistency-button ${deepWorkToday === false ? "inactive-active" : ""}`}
+              onClick={() => onSetDeepWork(false)}
+            >
+              No
+            </button>
+          </div>
+          <div className="consistency-row" aria-label="Recent deep work consistency">
+            {recentConsistency.map((day) => (
+              <div key={day.key} className="consistency-day">
+                <span className={`consistency-dot ${day.done ? "done" : ""}`} />
+                <small>{day.short}</small>
+              </div>
+            ))}
+          </div>
+        </article>
       </div>
     </section>
   );
 }
 
-function WeightScreen({ entries, form, formError, latestWeight, onFormChange, onSave, onEdit, onDelete }) {
+function WeightScreen({
+  entries,
+  form,
+  formError,
+  latestWeight,
+  celebration,
+  onFormChange,
+  onSave,
+  onEdit,
+  onDelete,
+}) {
   const sortedEntries = getSortedWeightEntries(entries, "desc");
   const chartSeries = getWeightChartSeries(entries);
   const goalMessage = getWeightGoalMessage(latestWeight);
 
   return (
     <section className="tracker-screen">
+      <ConfettiOverlay active={celebration.active} />
+
+      {celebration.active ? (
+        <div className="celebration-banner" role="status" aria-live="polite">
+          <p>New low logged</p>
+          <strong>{celebration.message}</strong>
+        </div>
+      ) : null}
+
       <article className="card screen-card screen-card-large">
         <div className="section-head">
           <div>
@@ -410,103 +482,33 @@ function WeightScreen({ entries, form, formError, latestWeight, onFormChange, on
   );
 }
 
-function MeditationScreen({ entries, form, formError, stats, onFormChange, onSave, onEdit, onDelete }) {
-  const sortedEntries = [...entries].sort((left, right) => {
-    const dateDelta = new Date(right.date) - new Date(left.date);
-    return dateDelta || (right.createdAt || 0) - (left.createdAt || 0);
-  });
-
-  return (
-    <section className="tracker-screen">
-      <article className="card screen-card screen-card-large">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Meditation</p>
-            <h2>Simple session history</h2>
-          </div>
-          <p className="subtle-stat">{stats.totalSessions ? `${stats.totalSessions} sessions` : ""}</p>
-        </div>
-
-        {sortedEntries.length ? (
-          <div className="list-stack">
-            {sortedEntries.map((entry) => (
-              <article key={entry.id} className="history-item history-item-notes">
-                <div>
-                  <p className="history-date">{formatLongDate(entry.date)}</p>
-                  <strong className="history-main">{entry.durationMinutes} min</strong>
-                  {entry.notes ? <p className="history-note">{entry.notes}</p> : null}
-                </div>
-                <div className="history-actions">
-                  <button type="button" className="text-button" onClick={() => onEdit(entry)}>Edit</button>
-                  <button type="button" className="text-button danger" onClick={() => onDelete(entry.id)}>Delete</button>
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <p className="empty-copy">No sessions yet. Start with 3 minutes.</p>
-        )}
-      </article>
-
-      <article className="card panel-card">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">New session</p>
-            <h3>{form.id ? "Edit session" : "Add meditation session"}</h3>
-          </div>
-        </div>
-
-        <div className="form-stack">
-          <label className="field">
-            <span>Date</span>
-            <input type="date" value={form.date} onChange={(event) => onFormChange("date", event.target.value)} />
-          </label>
-          <label className="field">
-            <span>Duration</span>
-            <input
-              type="number"
-              min="1"
-              step="1"
-              value={form.durationMinutes}
-              onChange={(event) => onFormChange("durationMinutes", event.target.value)}
-              placeholder="10"
-            />
-          </label>
-          <label className="field">
-            <span>Notes (optional)</span>
-            <textarea
-              rows="4"
-              value={form.notes}
-              onChange={(event) => onFormChange("notes", event.target.value)}
-              placeholder="Anything you want to remember"
-            />
-          </label>
-        </div>
-
-        {formError ? <p className="form-error">{formError}</p> : null}
-
-        <button type="button" className="primary-button" onClick={onSave}>
-          {form.id ? "Save session" : "Add session"}
-        </button>
-      </article>
-    </section>
-  );
-}
-
 function App() {
   const [appState, setAppState] = useState(loadAppState);
   const [activeView, setActiveView] = useState("home");
   const [weightForm, setWeightForm] = useState(createWeightForm());
-  const [meditationForm, setMeditationForm] = useState(createMeditationForm());
   const [weightFormError, setWeightFormError] = useState("");
-  const [meditationFormError, setMeditationFormError] = useState("");
+  const [celebration, setCelebration] = useState({ active: false, message: "" });
 
   useEffect(() => {
     saveAppState(appState);
   }, [appState]);
 
+  useEffect(() => {
+    if (!celebration.active) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCelebration({ active: false, message: "" });
+    }, 4200);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [celebration]);
+
   const latestWeight = getSortedWeightEntries(appState.weightEntries, "desc")[0] || null;
-  const meditationStats = calculateMeditationStats(appState.meditationEntries);
+  const todayKey = getLocalDateKey();
+  const deepWorkToday = todayKey in appState.deepWorkDays ? Boolean(appState.deepWorkDays[todayKey]) : null;
+  const recentConsistency = getRecentConsistency(appState.deepWorkDays);
 
   function handleWeightFormChange(field, value) {
     setWeightForm((current) => ({ ...current, [field]: value }));
@@ -524,6 +526,10 @@ function App() {
       return;
     }
 
+    const previousLowest = getLowestWeight(
+      appState.weightEntries.filter((entry) => entry.id !== weightForm.id)
+    );
+
     const nextEntry = normalizeWeightEntry({
       ...weightForm,
       weight: weightValue,
@@ -538,6 +544,13 @@ function App() {
       ...current,
       weightEntries: [...current.weightEntries.filter((entry) => entry.id !== nextEntry.id), nextEntry],
     }));
+
+    if (previousLowest === null || weightValue < previousLowest) {
+      setCelebration({
+        active: true,
+        message: pickCelebrationMessage(),
+      });
+    }
 
     resetWeightForm();
     setActiveView("weight");
@@ -564,60 +577,14 @@ function App() {
     }
   }
 
-  function handleMeditationFormChange(field, value) {
-    setMeditationForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function resetMeditationForm() {
-    setMeditationForm(createMeditationForm());
-    setMeditationFormError("");
-  }
-
-  function handleSaveMeditation() {
-    const durationMinutes = toNumber(meditationForm.durationMinutes);
-    if (!meditationForm.date || durationMinutes === null || durationMinutes <= 0) {
-      setMeditationFormError("Please add a valid date and duration.");
-      return;
-    }
-
-    const nextEntry = normalizeMeditationEntry({
-      ...meditationForm,
-      durationMinutes,
-      createdAt: meditationForm.id
-        ? appState.meditationEntries.find((entry) => entry.id === meditationForm.id)?.createdAt || Date.now()
-        : Date.now(),
-      updatedAt: Date.now(),
-    });
-
+  function handleSetDeepWork(value) {
     setAppState((current) => ({
       ...current,
-      meditationEntries: [...current.meditationEntries.filter((entry) => entry.id !== nextEntry.id), nextEntry],
+      deepWorkDays: {
+        ...current.deepWorkDays,
+        [todayKey]: value,
+      },
     }));
-
-    resetMeditationForm();
-    setActiveView("meditation");
-  }
-
-  function handleEditMeditation(entry) {
-    setMeditationForm({
-      id: entry.id,
-      date: entry.date,
-      durationMinutes: entry.durationMinutes,
-      notes: entry.notes,
-    });
-    setMeditationFormError("");
-    setActiveView("meditation");
-  }
-
-  function handleDeleteMeditation(id) {
-    setAppState((current) => ({
-      ...current,
-      meditationEntries: current.meditationEntries.filter((entry) => entry.id !== id),
-    }));
-
-    if (meditationForm.id === id) {
-      resetMeditationForm();
-    }
   }
 
   return (
@@ -630,7 +597,13 @@ function App() {
       </header>
 
       {activeView === "home" ? (
-        <HomeScreen latestWeight={latestWeight} meditationStats={meditationStats} onOpen={setActiveView} />
+        <HomeScreen
+          latestWeight={latestWeight}
+          deepWorkToday={deepWorkToday}
+          recentConsistency={recentConsistency}
+          onOpenWeight={() => setActiveView("weight")}
+          onSetDeepWork={handleSetDeepWork}
+        />
       ) : null}
 
       {activeView === "weight" ? (
@@ -639,23 +612,11 @@ function App() {
           form={weightForm}
           formError={weightFormError}
           latestWeight={latestWeight}
+          celebration={celebration}
           onFormChange={handleWeightFormChange}
           onSave={handleSaveWeight}
           onEdit={handleEditWeight}
           onDelete={handleDeleteWeight}
-        />
-      ) : null}
-
-      {activeView === "meditation" ? (
-        <MeditationScreen
-          entries={appState.meditationEntries}
-          form={meditationForm}
-          formError={meditationFormError}
-          stats={meditationStats}
-          onFormChange={handleMeditationFormChange}
-          onSave={handleSaveMeditation}
-          onEdit={handleEditMeditation}
-          onDelete={handleDeleteMeditation}
         />
       ) : null}
     </main>

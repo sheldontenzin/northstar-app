@@ -73,6 +73,7 @@ function loadAppState() {
   const fallback = {
     weightEntries: [],
     deepWorkDays: {},
+    workoutDays: {},
   };
 
   try {
@@ -92,6 +93,7 @@ function loadAppState() {
     return {
       weightEntries: Array.isArray(parsed?.weightEntries) ? parsed.weightEntries.map(normalizeWeightEntry) : [],
       deepWorkDays: parsed?.deepWorkDays && typeof parsed.deepWorkDays === "object" ? parsed.deepWorkDays : {},
+      workoutDays: parsed?.workoutDays && typeof parsed.workoutDays === "object" ? parsed.workoutDays : {},
     };
   } catch (error) {
     return fallback;
@@ -329,7 +331,16 @@ function WeightChart({ labels, values, unit }) {
   );
 }
 
-function HomeScreen({ latestWeight, deepWorkToday, recentConsistency, onOpenWeight, onSetDeepWork }) {
+function HomeScreen({
+  latestWeight,
+  deepWorkToday,
+  workoutToday,
+  deepWorkConsistency,
+  workoutConsistency,
+  onOpenWeight,
+  onSetDeepWork,
+  onSetWorkout,
+}) {
   return (
     <section className="home">
       <article className="card intro-card intro-card-hero">
@@ -369,7 +380,37 @@ function HomeScreen({ latestWeight, deepWorkToday, recentConsistency, onOpenWeig
             </button>
           </div>
           <div className="consistency-row" aria-label="Recent deep work consistency">
-            {recentConsistency.map((day) => (
+            {deepWorkConsistency.map((day) => (
+              <div key={day.key} className="consistency-day">
+                <span className={`consistency-dot ${day.done ? "done" : ""}`} />
+                <small>{day.short}</small>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="card home-card deep-work-card">
+          <p className="eyebrow">Workout / no zero days</p>
+          <h2>Did you do your workout today?</h2>
+          <p className="consistency-copy">push-up progressions + pull-ups</p>
+          <div className="consistency-actions">
+            <button
+              type="button"
+              className={`consistency-button ${workoutToday ? "active" : ""}`}
+              onClick={() => onSetWorkout(true)}
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              className={`consistency-button ${workoutToday === false ? "inactive-active" : ""}`}
+              onClick={() => onSetWorkout(false)}
+            >
+              No
+            </button>
+          </div>
+          <div className="consistency-row" aria-label="Recent workout consistency">
+            {workoutConsistency.map((day) => (
               <div key={day.key} className="consistency-day">
                 <span className={`consistency-dot ${day.done ? "done" : ""}`} />
                 <small>{day.short}</small>
@@ -508,7 +549,9 @@ function App() {
   const latestWeight = getSortedWeightEntries(appState.weightEntries, "desc")[0] || null;
   const todayKey = getLocalDateKey();
   const deepWorkToday = todayKey in appState.deepWorkDays ? Boolean(appState.deepWorkDays[todayKey]) : null;
-  const recentConsistency = getRecentConsistency(appState.deepWorkDays);
+  const workoutToday = todayKey in appState.workoutDays ? Boolean(appState.workoutDays[todayKey]) : null;
+  const deepWorkConsistency = getRecentConsistency(appState.deepWorkDays);
+  const workoutConsistency = getRecentConsistency(appState.workoutDays);
 
   function handleWeightFormChange(field, value) {
     setWeightForm((current) => ({ ...current, [field]: value }));
@@ -587,6 +630,16 @@ function App() {
     }));
   }
 
+  function handleSetWorkout(value) {
+    setAppState((current) => ({
+      ...current,
+      workoutDays: {
+        ...current.workoutDays,
+        [todayKey]: value,
+      },
+    }));
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -600,9 +653,12 @@ function App() {
         <HomeScreen
           latestWeight={latestWeight}
           deepWorkToday={deepWorkToday}
-          recentConsistency={recentConsistency}
+          workoutToday={workoutToday}
+          deepWorkConsistency={deepWorkConsistency}
+          workoutConsistency={workoutConsistency}
           onOpenWeight={() => setActiveView("weight")}
           onSetDeepWork={handleSetDeepWork}
+          onSetWorkout={handleSetWorkout}
         />
       ) : null}
 

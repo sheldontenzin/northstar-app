@@ -206,6 +206,11 @@ p {
   gap: 14px;
 }
 
+.consistency-copy {
+  color: var(--muted);
+  line-height: 1.65;
+}
+
 .consistency-actions {
   margin-top: 4px;
 }

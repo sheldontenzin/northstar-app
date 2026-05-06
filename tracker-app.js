@@ -249,9 +249,10 @@ function WeightChart({ labels, values, unit }) {
     }
 
     const context = canvasRef.current.getContext("2d");
-    const gradient = context.createLinearGradient(0, 0, 0, 240);
-    gradient.addColorStop(0, "rgba(92, 186, 183, 0.22)");
-    gradient.addColorStop(1, "rgba(92, 186, 183, 0.02)");
+    const gradient = context.createLinearGradient(0, 0, 0, 260);
+    gradient.addColorStop(0, "rgba(209, 170, 204, 0.24)");
+    gradient.addColorStop(0.55, "rgba(199, 176, 221, 0.12)");
+    gradient.addColorStop(1, "rgba(255, 255, 255, 0.015)");
     const finiteValues = values.filter((value) => value !== null);
     const rangeMin = Math.min(...finiteValues, WEIGHT_GOAL_MIN);
     const rangeMax = Math.max(...finiteValues, WEIGHT_GOAL_MAX);
@@ -266,27 +267,30 @@ function WeightChart({ labels, values, unit }) {
         datasets: [
           {
             data: labels.map(() => WEIGHT_GOAL_MIN),
-            borderColor: "rgba(95, 183, 180, 0.24)",
-            borderWidth: 1.5,
-            borderDash: [6, 6],
+            borderColor: "rgba(255, 223, 204, 0.22)",
+            borderWidth: 1.2,
+            borderDash: [5, 7],
             pointRadius: 0,
           },
           {
             data: labels.map(() => WEIGHT_GOAL_MAX),
-            borderColor: "rgba(95, 183, 180, 0.24)",
-            borderWidth: 1.5,
-            borderDash: [6, 6],
+            borderColor: "rgba(255, 223, 204, 0.22)",
+            borderWidth: 1.2,
+            borderDash: [5, 7],
             pointRadius: 0,
           },
           {
             data: values,
-            borderColor: "#59aaa8",
+            borderColor: "#d4afd4",
             backgroundColor: gradient,
-            borderWidth: 3,
-            tension: 0.4,
+            borderWidth: 2.5,
+            tension: 0.46,
             fill: true,
             pointRadius: 0,
             pointHoverRadius: 4,
+            pointHoverBackgroundColor: "#ead2e6",
+            pointHoverBorderColor: "rgba(255, 255, 255, 0.9)",
+            pointHoverBorderWidth: 1.5,
             spanGaps: true,
           },
         ],
@@ -297,6 +301,12 @@ function WeightChart({ labels, values, unit }) {
           legend: { display: false },
           tooltip: {
             displayColors: false,
+            backgroundColor: "rgba(255, 255, 255, 0.18)",
+            borderColor: "rgba(255, 255, 255, 0.18)",
+            borderWidth: 1,
+            titleColor: "rgba(255, 255, 255, 0.98)",
+            bodyColor: "rgba(255, 255, 255, 0.92)",
+            padding: 10,
             callbacks: {
               label(context) {
                 return `${context.parsed.y.toFixed(1)} ${unit}`;
@@ -306,14 +316,30 @@ function WeightChart({ labels, values, unit }) {
         },
         scales: {
           x: {
-            grid: { display: false },
-            ticks: { color: "rgba(255, 255, 255, 0.7)", font: { size: 11 } },
+            border: { display: false },
+            grid: { display: false, drawTicks: false },
+            ticks: {
+              color: "rgba(255, 255, 255, 0.52)",
+              font: { size: 10.5, weight: 500 },
+              maxRotation: 0,
+              autoSkipPadding: 14,
+              padding: 8,
+            },
           },
           y: {
             min: suggestedMin,
             max: suggestedMax,
-            grid: { color: "rgba(255, 255, 255, 0.12)" },
-            ticks: { color: "rgba(255, 255, 255, 0.72)", font: { size: 11 } },
+            border: { display: false },
+            grid: {
+              color: "rgba(255, 255, 255, 0.06)",
+              drawTicks: false,
+            },
+            ticks: {
+              color: "rgba(255, 255, 255, 0.5)",
+              font: { size: 10.5, weight: 500 },
+              padding: 10,
+              maxTicksLimit: 5,
+            },
           },
         },
       },

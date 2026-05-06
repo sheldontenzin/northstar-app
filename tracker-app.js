@@ -656,7 +656,10 @@ function App() {
 
       <header className="topbar">
         <div className="brand-block">
-          <p className="topbar__label">Polaris</p>
+          <p className="topbar__label">
+            <span className="brand-star" aria-hidden="true">✦</span>
+            <span>Polaris</span>
+          </p>
         </div>
         <Navigation activeView={activeView} onChange={setActiveView} />
       </header>

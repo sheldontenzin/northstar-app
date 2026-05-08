@@ -431,21 +431,14 @@ function GoalEditSheet({
 
 function HomeScreen({
   latestWeight,
-  todayKey,
   deepWorkToday,
   workoutToday,
   deepWorkConsistency,
   workoutConsistency,
   deepWorkStreak,
   workoutStreak,
-  recentDateOptions,
   onOpenWeight,
-  editorGoal,
-  editorDateKey,
-  editorValue,
-  onCloseEditor,
   onOpenEditor,
-  onSelectEditorDate,
   onSetDeepWork,
   onSetWorkout,
 }) {
@@ -508,18 +501,6 @@ function HomeScreen({
               </div>
             ))}
           </div>
-
-          {editorGoal === "deepWork" ? (
-            <GoalEditSheet
-              title="Deep work"
-              dateOptions={recentDateOptions}
-              selectedDateKey={editorDateKey}
-              selectedValue={editorValue}
-              onSelectDate={onSelectEditorDate}
-              onSetValue={onSetDeepWork}
-              onClose={onCloseEditor}
-            />
-          ) : null}
         </article>
 
         <article className="card home-card deep-work-card">
@@ -563,18 +544,6 @@ function HomeScreen({
               </div>
             ))}
           </div>
-
-          {editorGoal === "workout" ? (
-            <GoalEditSheet
-              title="Workout"
-              dateOptions={recentDateOptions}
-              selectedDateKey={editorDateKey}
-              selectedValue={editorValue}
-              onSelectDate={onSelectEditorDate}
-              onSetValue={onSetWorkout}
-              onClose={onCloseEditor}
-            />
-          ) : null}
         </article>
       </div>
     </section>
@@ -848,21 +817,14 @@ function App() {
       {activeView === "home" ? (
         <HomeScreen
           latestWeight={latestWeight}
-          todayKey={todayKey}
           deepWorkToday={deepWorkToday}
           workoutToday={workoutToday}
           deepWorkConsistency={deepWorkConsistency}
           workoutConsistency={workoutConsistency}
           deepWorkStreak={deepWorkStreak}
           workoutStreak={workoutStreak}
-          recentDateOptions={recentDateOptions}
           onOpenWeight={() => setActiveView("weight")}
-          editorGoal={editorGoal}
-          editorDateKey={editorDateKey}
-          editorValue={editorValue}
-          onCloseEditor={handleCloseEditor}
           onOpenEditor={handleOpenEditor}
-          onSelectEditorDate={handleSelectEditorDate}
           onSetDeepWork={handleSetDeepWork}
           onSetWorkout={handleSetWorkout}
         />
@@ -879,6 +841,30 @@ function App() {
           onSave={handleSaveWeight}
           onEdit={handleEditWeight}
           onDelete={handleDeleteWeight}
+        />
+      ) : null}
+
+      {editorGoal === "deepWork" ? (
+        <GoalEditSheet
+          title="Deep work"
+          dateOptions={recentDateOptions}
+          selectedDateKey={editorDateKey}
+          selectedValue={editorValue}
+          onSelectDate={handleSelectEditorDate}
+          onSetValue={handleSetDeepWork}
+          onClose={handleCloseEditor}
+        />
+      ) : null}
+
+      {editorGoal === "workout" ? (
+        <GoalEditSheet
+          title="Workout"
+          dateOptions={recentDateOptions}
+          selectedDateKey={editorDateKey}
+          selectedValue={editorValue}
+          onSelectDate={handleSelectEditorDate}
+          onSetValue={handleSetWorkout}
+          onClose={handleCloseEditor}
         />
       ) : null}
     </main>

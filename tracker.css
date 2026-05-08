@@ -279,7 +279,6 @@ p {
 }
 
 .deep-work-card {
-  position: relative;
   display: grid;
   gap: 14px;
 }
@@ -331,28 +330,33 @@ p {
 }
 
 .goal-edit-sheet {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 4;
+  z-index: 30;
   display: grid;
   align-items: end;
+  padding: 20px 14px calc(20px + env(safe-area-inset-bottom));
 }
 
 .goal-edit-sheet__backdrop {
   position: absolute;
   inset: 0;
-  border-radius: inherit;
-  background: rgba(34, 18, 56, 0.18);
+  background: rgba(22, 12, 36, 0.42);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .goal-edit-sheet__panel {
   position: relative;
-  margin: 10px;
-  padding: 18px;
-  border-radius: calc(var(--radius-lg) - 2px);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.18));
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: var(--shadow-soft);
+  width: min(100%, 430px);
+  margin: 0 auto;
+  padding: 20px 18px 18px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.24));
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 28px 70px rgba(14, 7, 28, 0.28);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .goal-edit-sheet__head {
@@ -360,6 +364,14 @@ p {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.goal-edit-sheet__head h3 {
+  margin-top: 8px;
+  color: var(--text);
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .goal-edit-sheet__copy {
@@ -717,6 +729,14 @@ p {
 
   .goal-card-head {
     align-items: center;
+  }
+
+  .goal-edit-sheet {
+    padding-inline: 12px;
+  }
+
+  .goal-edit-sheet__panel {
+    width: 100%;
   }
 
   .intro-card h1 {

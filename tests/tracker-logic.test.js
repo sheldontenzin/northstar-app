@@ -1,7 +1,9 @@
 const assert = require("node:assert/strict");
 const {
   calculateStreak,
+  getMonthCalendar,
   setGoalCompletion,
+  toggleGoalCompletion,
 } = require("../tracker-logic.js");
 
 function makeKey(offsetDays = 0) {
@@ -61,9 +63,34 @@ function testEditingOneGoalMapDoesNotAffectAnother() {
   assert.equal(workoutDays[yesterdayKey], undefined);
 }
 
+function testTogglingCalendarDateRestoresAndClearsCompletion() {
+  const todayKey = makeKey(0);
+  const yesterdayKey = makeKey(-1);
+
+  let goalDays = setGoalCompletion({}, todayKey, true);
+  goalDays = toggleGoalCompletion(goalDays, yesterdayKey);
+  assert.equal(goalDays[yesterdayKey], true);
+  assert.equal(calculateStreak(goalDays, todayKey), 2);
+
+  goalDays = toggleGoalCompletion(goalDays, yesterdayKey);
+  assert.equal(goalDays[yesterdayKey], false);
+  assert.equal(calculateStreak(goalDays, todayKey), 1);
+}
+
+function testCalendarDisablesFutureDates() {
+  const calendar = getMonthCalendar(new Date("2026-05-08T12:00:00"), {});
+  const futureCell = calendar.weeks.flat().find((cell) => cell && cell.key === makeKey(1));
+  const todayCell = calendar.weeks.flat().find((cell) => cell && cell.key === makeKey(0));
+
+  assert.equal(todayCell.isFuture, false);
+  assert.equal(futureCell.isFuture, true);
+}
+
 testMarkingYesterdayRestoresStreak();
 testEditingPastDateBreaksStreak();
 testTodayTrackingStillWorks();
 testEditingOneGoalMapDoesNotAffectAnother();
+testTogglingCalendarDateRestoresAndClearsCompletion();
+testCalendarDisablesFutureDates();
 
 console.log("tracker-logic tests passed");

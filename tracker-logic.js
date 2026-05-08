@@ -42,6 +42,48 @@
     });
   }
 
+  function getMonthCalendar(baseDate = new Date(), goalDays = {}) {
+    const current = new Date(baseDate);
+    current.setHours(0, 0, 0, 0);
+
+    const year = current.getFullYear();
+    const month = current.getMonth();
+    const monthStart = new Date(year, month, 1);
+    const monthEnd = new Date(year, month + 1, 0);
+    const leadingDays = monthStart.getDay();
+    const totalDays = monthEnd.getDate();
+    const cells = [];
+
+    for (let index = 0; index < leadingDays; index += 1) {
+      cells.push(null);
+    }
+
+    for (let day = 1; day <= totalDays; day += 1) {
+      const date = new Date(year, month, day);
+      const key = getLocalDateKey(date);
+      cells.push({
+        key,
+        label: String(day),
+        isFuture: date > current,
+        isCompleted: goalDays[key] === true,
+      });
+    }
+
+    const weeks = [];
+    for (let index = 0; index < cells.length; index += 7) {
+      weeks.push(cells.slice(index, index + 7));
+    }
+
+    return {
+      monthLabel: current.toLocaleDateString(undefined, {
+        month: "long",
+        year: "numeric",
+      }),
+      weekdayLabels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+      weeks,
+    };
+  }
+
   function calculateStreak(goalDays, referenceDateKey = getLocalDateKey()) {
     let streak = 0;
     let currentKey = referenceDateKey;
@@ -61,10 +103,19 @@
     };
   }
 
+  function toggleGoalCompletion(goalDays, dateKey) {
+    return {
+      ...(goalDays || {}),
+      [dateKey]: goalDays?.[dateKey] === true ? false : true,
+    };
+  }
+
   const api = {
     calculateStreak,
+    getMonthCalendar,
     getRecentDateOptions,
     setGoalCompletion,
+    toggleGoalCompletion,
   };
 
   if (typeof module !== "undefined" && module.exports) {

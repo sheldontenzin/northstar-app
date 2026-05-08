@@ -283,29 +283,6 @@ p {
   gap: 14px;
 }
 
-.date-chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.date-chip {
-  min-height: 40px;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: var(--text-soft);
-  font-weight: 600;
-  cursor: pointer;
-  backdrop-filter: blur(10px);
-}
-
-.date-chip.active {
-  background: rgba(255, 255, 255, 0.24);
-  color: var(--text);
-}
-
 .goal-card-head {
   display: flex;
   align-items: flex-start;
@@ -379,6 +356,58 @@ p {
   color: var(--text-soft);
   line-height: 1.65;
   font-weight: 500;
+}
+
+.calendar-head {
+  margin-top: 14px;
+}
+
+.calendar-month {
+  color: var(--text);
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.calendar-weekday {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.calendar-day {
+  min-height: 42px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+}
+
+.calendar-day.completed {
+  background: rgba(255, 255, 255, 0.26);
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.calendar-day:disabled {
+  opacity: 0.34;
+  cursor: not-allowed;
+}
+
+.calendar-day-empty {
+  min-height: 42px;
 }
 
 .consistency-actions {
@@ -668,7 +697,7 @@ p {
 .primary-button:hover,
 .text-button:hover,
 .consistency-button:hover,
-.date-chip:hover,
+.calendar-day:hover:not(:disabled),
 .icon-button:hover {
   transform: translateY(-1px);
 }

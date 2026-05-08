@@ -1,5 +1,5 @@
 const { useEffect, useRef, useState } = React;
-const { calculateStreak, getRecentDateOptions, setGoalCompletion } = window.PolarisLogic;
+const { calculateStreak, getMonthCalendar, toggleGoalCompletion } = window.PolarisLogic;
 
 const STORAGE_KEY = "polaris-lite-v3";
 const WEIGHT_GOAL_MIN = 135;
@@ -367,15 +367,11 @@ function WeightChart({ labels, values, unit }) {
 
 function GoalEditSheet({
   title,
-  dateOptions,
-  selectedDateKey,
-  selectedValue,
-  onSelectDate,
-  onSetValue,
+  goalDays,
+  onToggleDate,
   onClose,
 }) {
-  const selectedOption =
-    dateOptions.find((option) => option.key === selectedDateKey) || dateOptions[0];
+  const calendar = getMonthCalendar(new Date(), goalDays);
 
   return (
     <div className="goal-edit-sheet" role="dialog" aria-modal="true" aria-label={`Edit ${title} completion`}>
@@ -391,38 +387,34 @@ function GoalEditSheet({
           </button>
         </div>
 
-        <p className="goal-edit-sheet__copy">Choose a recent day, then update whether you completed it.</p>
+        <p className="goal-edit-sheet__copy">Choose a recent day, then tap a date to toggle completion.</p>
 
-        <div className="date-chip-row" aria-label={`Select a day to edit ${title}`}>
-          {dateOptions.map((option) => (
-            <button
-              key={option.key}
-              type="button"
-              className={`date-chip ${selectedDateKey === option.key ? "active" : ""}`}
-              onClick={() => onSelectDate(option.key)}
-            >
-              {option.label}
-            </button>
-          ))}
+        <div className="calendar-head">
+          <p className="calendar-month">{calendar.monthLabel}</p>
         </div>
 
-        <p className="streak-copy">Editing {selectedOption.label.toLowerCase()}</p>
+        <div className="calendar-grid" aria-label={`Calendar history for ${title}`}>
+          {calendar.weekdayLabels.map((label) => (
+            <span key={label} className="calendar-weekday">{label}</span>
+          ))}
 
-        <div className="consistency-actions">
-          <button
-            type="button"
-            className={`consistency-button ${selectedValue ? "active" : ""}`}
-            onClick={() => onSetValue(true)}
-          >
-            Yes
-          </button>
-          <button
-            type="button"
-            className={`consistency-button ${selectedValue === false ? "inactive-active" : ""}`}
-            onClick={() => onSetValue(false)}
-          >
-            No
-          </button>
+          {calendar.weeks.flat().map((cell, index) =>
+            cell ? (
+              <button
+                key={cell.key}
+                type="button"
+                className={`calendar-day ${cell.isCompleted ? "completed" : ""}`}
+                onClick={() => onToggleDate(cell.key)}
+                disabled={cell.isFuture}
+                aria-pressed={cell.isCompleted}
+                aria-label={`${cell.key} ${cell.isCompleted ? "completed" : "not completed"}`}
+              >
+                {cell.label}
+              </button>
+            ) : (
+              <span key={`empty-${index}`} className="calendar-day calendar-day-empty" aria-hidden="true" />
+            )
+          )}
         </div>
       </div>
     </div>
@@ -656,7 +648,7 @@ function App() {
   const [weightForm, setWeightForm] = useState(createWeightForm());
   const [weightFormError, setWeightFormError] = useState("");
   const [celebration, setCelebration] = useState({ active: false, message: "" });
-  const [goalEditor, setGoalEditor] = useState({ goal: null, dateKey: getLocalDateKey() });
+  const [goalEditor, setGoalEditor] = useState({ goal: null });
 
   useEffect(() => {
     saveAppState(appState);
@@ -676,19 +668,13 @@ function App() {
 
   const latestWeight = getSortedWeightEntries(appState.weightEntries, "desc")[0] || null;
   const todayKey = getLocalDateKey();
-  const recentDateOptions = getRecentDateOptions(7);
-  const editorDateKey = goalEditor.dateKey;
   const editorGoal = goalEditor.goal;
-  const editorValue =
+  const editorGoalDays =
     editorGoal === "deepWork"
-      ? editorDateKey in appState.deepWorkDays
-        ? Boolean(appState.deepWorkDays[editorDateKey])
-        : null
+      ? appState.deepWorkDays
       : editorGoal === "workout"
-        ? editorDateKey in appState.workoutDays
-          ? Boolean(appState.workoutDays[editorDateKey])
-          : null
-        : null;
+        ? appState.workoutDays
+        : {};
   const deepWorkToday = todayKey in appState.deepWorkDays ? Boolean(appState.deepWorkDays[todayKey]) : null;
   const workoutToday = todayKey in appState.workoutDays ? Boolean(appState.workoutDays[todayKey]) : null;
   const deepWorkConsistency = getRecentConsistency(appState.deepWorkDays);
@@ -766,35 +752,43 @@ function App() {
   function handleSetDeepWork(value) {
     setAppState((current) => ({
       ...current,
-      deepWorkDays: setGoalCompletion(
-        current.deepWorkDays,
-        goalEditor.goal === "deepWork" ? goalEditor.dateKey : todayKey,
-        value
-      ),
+      deepWorkDays: {
+        ...current.deepWorkDays,
+        [todayKey]: value,
+      },
     }));
   }
 
   function handleSetWorkout(value) {
     setAppState((current) => ({
       ...current,
-      workoutDays: setGoalCompletion(
-        current.workoutDays,
-        goalEditor.goal === "workout" ? goalEditor.dateKey : todayKey,
-        value
-      ),
+      workoutDays: {
+        ...current.workoutDays,
+        [todayKey]: value,
+      },
     }));
   }
 
   function handleOpenEditor(goal) {
-    setGoalEditor({ goal, dateKey: todayKey });
+    setGoalEditor({ goal });
   }
 
   function handleCloseEditor() {
-    setGoalEditor({ goal: null, dateKey: todayKey });
+    setGoalEditor({ goal: null });
   }
 
-  function handleSelectEditorDate(dateKey) {
-    setGoalEditor((current) => ({ ...current, dateKey }));
+  function handleToggleDeepWorkDate(dateKey) {
+    setAppState((current) => ({
+      ...current,
+      deepWorkDays: toggleGoalCompletion(current.deepWorkDays, dateKey),
+    }));
+  }
+
+  function handleToggleWorkoutDate(dateKey) {
+    setAppState((current) => ({
+      ...current,
+      workoutDays: toggleGoalCompletion(current.workoutDays, dateKey),
+    }));
   }
 
   return (
@@ -847,11 +841,8 @@ function App() {
       {editorGoal === "deepWork" ? (
         <GoalEditSheet
           title="Deep work"
-          dateOptions={recentDateOptions}
-          selectedDateKey={editorDateKey}
-          selectedValue={editorValue}
-          onSelectDate={handleSelectEditorDate}
-          onSetValue={handleSetDeepWork}
+          goalDays={editorGoalDays}
+          onToggleDate={handleToggleDeepWorkDate}
           onClose={handleCloseEditor}
         />
       ) : null}
@@ -859,11 +850,8 @@ function App() {
       {editorGoal === "workout" ? (
         <GoalEditSheet
           title="Workout"
-          dateOptions={recentDateOptions}
-          selectedDateKey={editorDateKey}
-          selectedValue={editorValue}
-          onSelectDate={handleSelectEditorDate}
-          onSetValue={handleSetWorkout}
+          goalDays={editorGoalDays}
+          onToggleDate={handleToggleWorkoutDate}
           onClose={handleCloseEditor}
         />
       ) : null}

@@ -283,6 +283,34 @@ p {
   gap: 14px;
 }
 
+.date-picker-card {
+  display: grid;
+  gap: 14px;
+}
+
+.date-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.date-chip {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--text-soft);
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+}
+
+.date-chip.active {
+  background: rgba(255, 255, 255, 0.24);
+  color: var(--text);
+}
+
 .consistency-actions {
   margin-top: 2px;
   flex-wrap: wrap;
@@ -313,6 +341,13 @@ p {
 .consistency-row {
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.streak-copy {
+  color: var(--text-soft);
+  font-size: 0.94rem;
+  font-weight: 500;
+  line-height: 1.6;
 }
 
 .consistency-day {

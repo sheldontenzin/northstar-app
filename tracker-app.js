@@ -1,4 +1,5 @@
 const { useEffect, useRef, useState } = React;
+const { calculateStreak, getRecentDateOptions, setGoalCompletion } = window.PolarisLogic;
 
 const STORAGE_KEY = "polaris-lite-v3";
 const WEIGHT_GOAL_MIN = 135;
@@ -366,11 +367,17 @@ function WeightChart({ labels, values, unit }) {
 
 function HomeScreen({
   latestWeight,
-  deepWorkToday,
-  workoutToday,
+  selectedDay,
+  selectedDayKey,
+  deepWorkSelected,
+  workoutSelected,
   deepWorkConsistency,
   workoutConsistency,
+  deepWorkStreak,
+  workoutStreak,
+  recentDateOptions,
   onOpenWeight,
+  onSelectDay,
   onSetDeepWork,
   onSetWorkout,
 }) {
@@ -393,20 +400,39 @@ function HomeScreen({
           </p>
         </button>
 
+        <article className="card home-card date-picker-card">
+          <p className="eyebrow">Edit goal completion</p>
+          <h2>{selectedDay.label}</h2>
+          <p>Pick today, yesterday, or a recent day and update it without breaking the streak for the wrong reason.</p>
+          <div className="date-chip-row" aria-label="Select a day to edit">
+            {recentDateOptions.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                className={`date-chip ${selectedDayKey === option.key ? "active" : ""}`}
+                onClick={() => onSelectDay(option.key)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </article>
+
         <article className="card home-card deep-work-card">
           <p className="eyebrow">Deep work / no zero days</p>
-          <h2>Did you work on something today?</h2>
+          <h2>Did you work on something {selectedDayKey === getLocalDateKey() ? "today" : `on ${selectedDay.label.toLowerCase()}`}?</h2>
+          <p className="streak-copy">Current streak: {deepWorkStreak} day{deepWorkStreak === 1 ? "" : "s"}</p>
           <div className="consistency-actions">
             <button
               type="button"
-              className={`consistency-button ${deepWorkToday ? "active" : ""}`}
+              className={`consistency-button ${deepWorkSelected ? "active" : ""}`}
               onClick={() => onSetDeepWork(true)}
             >
               Yes
             </button>
             <button
               type="button"
-              className={`consistency-button ${deepWorkToday === false ? "inactive-active" : ""}`}
+              className={`consistency-button ${deepWorkSelected === false ? "inactive-active" : ""}`}
               onClick={() => onSetDeepWork(false)}
             >
               No
@@ -424,19 +450,20 @@ function HomeScreen({
 
         <article className="card home-card deep-work-card">
           <p className="eyebrow">Workout / no zero days</p>
-          <h2>Did you do your workout today?</h2>
+          <h2>Did you do your workout {selectedDayKey === getLocalDateKey() ? "today" : `on ${selectedDay.label.toLowerCase()}`}?</h2>
           <p className="consistency-copy">push-up progressions + pull-ups</p>
+          <p className="streak-copy">Current streak: {workoutStreak} day{workoutStreak === 1 ? "" : "s"}</p>
           <div className="consistency-actions">
             <button
               type="button"
-              className={`consistency-button ${workoutToday ? "active" : ""}`}
+              className={`consistency-button ${workoutSelected ? "active" : ""}`}
               onClick={() => onSetWorkout(true)}
             >
               Yes
             </button>
             <button
               type="button"
-              className={`consistency-button ${workoutToday === false ? "inactive-active" : ""}`}
+              className={`consistency-button ${workoutSelected === false ? "inactive-active" : ""}`}
               onClick={() => onSetWorkout(false)}
             >
               No
@@ -562,6 +589,7 @@ function App() {
   const [weightForm, setWeightForm] = useState(createWeightForm());
   const [weightFormError, setWeightFormError] = useState("");
   const [celebration, setCelebration] = useState({ active: false, message: "" });
+  const [selectedGoalDateKey, setSelectedGoalDateKey] = useState(getLocalDateKey());
 
   useEffect(() => {
     saveAppState(appState);
@@ -581,10 +609,17 @@ function App() {
 
   const latestWeight = getSortedWeightEntries(appState.weightEntries, "desc")[0] || null;
   const todayKey = getLocalDateKey();
-  const deepWorkToday = todayKey in appState.deepWorkDays ? Boolean(appState.deepWorkDays[todayKey]) : null;
-  const workoutToday = todayKey in appState.workoutDays ? Boolean(appState.workoutDays[todayKey]) : null;
+  const recentDateOptions = getRecentDateOptions(7);
+  const selectedDay =
+    recentDateOptions.find((option) => option.key === selectedGoalDateKey) || recentDateOptions[0];
+  const deepWorkSelected =
+    selectedGoalDateKey in appState.deepWorkDays ? Boolean(appState.deepWorkDays[selectedGoalDateKey]) : null;
+  const workoutSelected =
+    selectedGoalDateKey in appState.workoutDays ? Boolean(appState.workoutDays[selectedGoalDateKey]) : null;
   const deepWorkConsistency = getRecentConsistency(appState.deepWorkDays);
   const workoutConsistency = getRecentConsistency(appState.workoutDays);
+  const deepWorkStreak = calculateStreak(appState.deepWorkDays, todayKey);
+  const workoutStreak = calculateStreak(appState.workoutDays, todayKey);
 
   function handleWeightFormChange(field, value) {
     setWeightForm((current) => ({ ...current, [field]: value }));
@@ -656,20 +691,14 @@ function App() {
   function handleSetDeepWork(value) {
     setAppState((current) => ({
       ...current,
-      deepWorkDays: {
-        ...current.deepWorkDays,
-        [todayKey]: value,
-      },
+      deepWorkDays: setGoalCompletion(current.deepWorkDays, selectedGoalDateKey, value),
     }));
   }
 
   function handleSetWorkout(value) {
     setAppState((current) => ({
       ...current,
-      workoutDays: {
-        ...current.workoutDays,
-        [todayKey]: value,
-      },
+      workoutDays: setGoalCompletion(current.workoutDays, selectedGoalDateKey, value),
     }));
   }
 
@@ -693,11 +722,17 @@ function App() {
       {activeView === "home" ? (
         <HomeScreen
           latestWeight={latestWeight}
-          deepWorkToday={deepWorkToday}
-          workoutToday={workoutToday}
+          selectedDay={selectedDay}
+          selectedDayKey={selectedGoalDateKey}
+          deepWorkSelected={deepWorkSelected}
+          workoutSelected={workoutSelected}
           deepWorkConsistency={deepWorkConsistency}
           workoutConsistency={workoutConsistency}
+          deepWorkStreak={deepWorkStreak}
+          workoutStreak={workoutStreak}
+          recentDateOptions={recentDateOptions}
           onOpenWeight={() => setActiveView("weight")}
+          onSelectDay={setSelectedGoalDateKey}
           onSetDeepWork={handleSetDeepWork}
           onSetWorkout={handleSetWorkout}
         />

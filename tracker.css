@@ -279,11 +279,7 @@ p {
 }
 
 .deep-work-card {
-  display: grid;
-  gap: 14px;
-}
-
-.date-picker-card {
+  position: relative;
   display: grid;
   gap: 14px;
 }
@@ -309,6 +305,68 @@ p {
 .date-chip.active {
   background: rgba(255, 255, 255, 0.24);
   color: var(--text);
+}
+
+.goal-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--text-soft);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+}
+
+.goal-edit-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  align-items: end;
+}
+
+.goal-edit-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(34, 18, 56, 0.18);
+}
+
+.goal-edit-sheet__panel {
+  position: relative;
+  margin: 10px;
+  padding: 18px;
+  border-radius: calc(var(--radius-lg) - 2px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.18));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: var(--shadow-soft);
+}
+
+.goal-edit-sheet__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.goal-edit-sheet__copy {
+  margin-top: 10px;
+  color: var(--text-soft);
+  line-height: 1.65;
+  font-weight: 500;
 }
 
 .consistency-actions {
@@ -597,7 +655,9 @@ p {
 .nav__item:hover,
 .primary-button:hover,
 .text-button:hover,
-.consistency-button:hover {
+.consistency-button:hover,
+.date-chip:hover,
+.icon-button:hover {
   transform: translateY(-1px);
 }
 
@@ -653,6 +713,10 @@ p {
   .panel-card,
   .home-card {
     padding: 20px;
+  }
+
+  .goal-card-head {
+    align-items: center;
   }
 
   .intro-card h1 {

@@ -51,8 +51,19 @@ function testTodayTrackingStillWorks() {
   assert.equal(calculateStreak(goalDays, todayKey), 0);
 }
 
+function testEditingOneGoalMapDoesNotAffectAnother() {
+  const yesterdayKey = makeKey(-1);
+
+  const deepWorkDays = setGoalCompletion({}, yesterdayKey, true);
+  const workoutDays = {};
+
+  assert.equal(deepWorkDays[yesterdayKey], true);
+  assert.equal(workoutDays[yesterdayKey], undefined);
+}
+
 testMarkingYesterdayRestoresStreak();
 testEditingPastDateBreaksStreak();
 testTodayTrackingStillWorks();
+testEditingOneGoalMapDoesNotAffectAnother();
 
 console.log("tracker-logic tests passed");

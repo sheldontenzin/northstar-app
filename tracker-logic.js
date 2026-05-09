@@ -314,9 +314,31 @@
     return sortWeightEntries(entries, "desc")[0] || null;
   }
 
+  function getWeightHistoryEntries(entries) {
+    return sortWeightEntries(entries, "desc");
+  }
+
+  function getVisibleWeightHistoryEntries(entries, expanded = false, limit = 12) {
+    const historyEntries = getWeightHistoryEntries(entries);
+    return expanded ? historyEntries : historyEntries.slice(0, limit);
+  }
+
+  function getWeightLogDiagnostics(entries) {
+    const historyEntries = getWeightHistoryEntries(entries);
+
+    return {
+      count: historyEntries.length,
+      newestDate: historyEntries[0]?.date || null,
+      oldestDate: historyEntries[historyEntries.length - 1]?.date || null,
+    };
+  }
+
   const api = {
     calculateStreak,
     getDailyWeightSeries,
+    getVisibleWeightHistoryEntries,
+    getWeightHistoryEntries,
+    getWeightLogDiagnostics,
     getLatestWeightEntry,
     getMonthCalendar,
     getRecentDateOptions,

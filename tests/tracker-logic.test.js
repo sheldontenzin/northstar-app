@@ -3,6 +3,9 @@ const {
   calculateStreak,
   getDailyWeightSeries,
   getLatestWeightEntry,
+  getVisibleWeightHistoryEntries,
+  getWeightHistoryEntries,
+  getWeightLogDiagnostics,
   getMonthCalendar,
   getRollingAverageSummary,
   getRollingWeightAverageSeries,
@@ -241,6 +244,50 @@ function testPreviousAverageComparisonWorks() {
   assert.equal(Number(summary.change.toFixed(1)), -1.0);
 }
 
+function testOlderEntriesRemainSavedWhenNewEntriesExist() {
+  const entries = makeWeightEntries();
+  const history = getWeightHistoryEntries(entries);
+
+  assert.equal(history.length, entries.length);
+  assert.equal(history.at(-1).date, "2026-05-01");
+}
+
+function testHistorySectionShowsAllEntries() {
+  const entries = [
+    ...makeWeightEntries(),
+    { date: "2026-05-09", weight: 146, unit: "lb", createdAt: 5 },
+    { date: "2026-05-10", weight: 145, unit: "lb", createdAt: 6 },
+    { date: "2026-05-11", weight: 144, unit: "lb", createdAt: 7 },
+    { date: "2026-05-12", weight: 143, unit: "lb", createdAt: 8 },
+    { date: "2026-05-13", weight: 142, unit: "lb", createdAt: 9 },
+    { date: "2026-05-14", weight: 141, unit: "lb", createdAt: 10 },
+    { date: "2026-05-15", weight: 140, unit: "lb", createdAt: 11 },
+    { date: "2026-05-16", weight: 139, unit: "lb", createdAt: 12 },
+    { date: "2026-05-17", weight: 138, unit: "lb", createdAt: 13 },
+  ];
+
+  assert.equal(getVisibleWeightHistoryEntries(entries, false, 12).length, 12);
+  assert.equal(getVisibleWeightHistoryEntries(entries, true, 12).length, entries.length);
+}
+
+function testGraphSeriesDoNotMutateStoredEntries() {
+  const entries = makeWeightEntries();
+  const snapshot = JSON.stringify(entries);
+
+  getRollingWeightAverageSeries(entries, 12);
+  getDailyWeightSeries(entries, 12);
+
+  assert.equal(JSON.stringify(entries), snapshot);
+}
+
+function testWeightLogDiagnosticsReportOldestAndNewestDates() {
+  const diagnostics = getWeightLogDiagnostics(makeWeightEntries());
+
+  assert.equal(diagnostics.count, 4);
+  assert.equal(diagnostics.newestDate, "2026-05-08");
+  assert.equal(diagnostics.oldestDate, "2026-05-01");
+}
+
 function testFarApartDatesAreNotAveragedTogether() {
   const series = getRollingWeightAverageSeries(makeSparseWeightEntries(), 12);
   const summary = getRollingAverageSummary(makeSparseWeightEntries());
@@ -290,6 +337,10 @@ testWeightSeriesModeReturnsAverageDataset();
 testAverageUiConditionAppearsWhenLogsExist();
 testLatestRollingAverageSummaryMatchesChartData();
 testPreviousAverageComparisonWorks();
+testOlderEntriesRemainSavedWhenNewEntriesExist();
+testHistorySectionShowsAllEntries();
+testGraphSeriesDoNotMutateStoredEntries();
+testWeightLogDiagnosticsReportOldestAndNewestDates();
 testFarApartDatesAreNotAveragedTogether();
 testSevenEntriesAcrossMultipleWeeksAreNotOneWindow();
 

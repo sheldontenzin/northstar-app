@@ -3,6 +3,9 @@ const {
   calculateStreak,
   getDailyWeightSeries,
   getLatestWeightEntry,
+  getVisibleWeightHistoryEntries,
+  getWeightHistoryEntries,
+  getWeightLogDiagnostics,
   getMonthCalendar,
   getRollingAverageSummary,
   getWeightSeriesForMode,
@@ -547,7 +550,9 @@ function WeightScreen({
   onDelete,
 }) {
   const [chartMode, setChartMode] = useState("daily");
-  const sortedEntries = sortWeightEntries(entries, "desc");
+  const [showAllHistory, setShowAllHistory] = useState(false);
+  const sortedEntries = getWeightHistoryEntries(entries);
+  const visibleEntries = getVisibleWeightHistoryEntries(entries, showAllHistory, 12);
   const hasEnoughAverageLogs = hasEnoughWeightLogsForAverage(entries);
   const chartSeries = getWeightSeriesForMode(entries, chartMode);
   const averageSummary = getRollingAverageSummary(entries);
@@ -661,13 +666,22 @@ function WeightScreen({
         <article className="card panel-card">
           <div className="section-head">
             <div>
-              <p className="eyebrow">Recent</p>
-              <h3>Recent entries</h3>
+              <p className="eyebrow">History</p>
+              <h3>All entries</h3>
             </div>
+            {sortedEntries.length > 12 ? (
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => setShowAllHistory((current) => !current)}
+              >
+                {showAllHistory ? "Show less" : "Show all"}
+              </button>
+            ) : null}
           </div>
 
           <div className="list-stack">
-            {sortedEntries.slice(0, 6).map((entry) => (
+            {visibleEntries.map((entry) => (
               <article key={entry.id} className="history-item">
                 <div>
                   <p className="history-date">{formatLongDate(entry.date)}</p>
@@ -697,6 +711,26 @@ function App() {
   useEffect(() => {
     saveAppState(appState);
   }, [appState]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const debugWeightLogs =
+      searchParams.get("debugWeight") === "1" || window.localStorage.getItem("debugWeight") === "1";
+
+    if (!debugWeightLogs) {
+      return;
+    }
+
+    const diagnostics = getWeightLogDiagnostics(appState.weightEntries);
+    console.log("[Polaris] weight logs", appState.weightEntries);
+    console.log("[Polaris] weight log count", diagnostics.count);
+    console.log("[Polaris] newest weight date", diagnostics.newestDate);
+    console.log("[Polaris] oldest weight date", diagnostics.oldestDate);
+  }, [appState.weightEntries]);
 
   useEffect(() => {
     if (!celebration.active) {

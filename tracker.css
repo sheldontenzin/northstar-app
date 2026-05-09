@@ -674,7 +674,8 @@ p {
   font-weight: 500;
 }
 
-.field input {
+.field input,
+.date-display-button {
   display: block;
   width: 100%;
   max-width: 100%;
@@ -695,47 +696,58 @@ p {
   transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
 
-.field input[type="date"] {
+.field input {
   appearance: none;
   -webkit-appearance: none;
-  padding: 0 16px;
-  text-align: center;
-  text-align-last: center;
 }
 
-.field input[type="date"]::-webkit-date-and-time-value {
-  min-height: 54px;
-  height: 54px;
-  text-align: center;
+.date-field-wrap {
+  position: relative;
+  width: 100%;
+  min-width: 0;
 }
 
-.field input[type="date"]::-webkit-datetime-edit {
+.date-display-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 54px;
-  width: 100%;
   padding: 0;
+  background: rgba(255, 255, 255, 0.13);
+  cursor: pointer;
+  color: var(--text);
+  text-align: center;
+  text-wrap: nowrap;
 }
 
-.field input[type="date"]::-webkit-datetime-edit-fields-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.date-picker-native {
+  position: absolute;
+  inset: 0;
   width: 100%;
-}
-
-.field input[type="date"]::-webkit-calendar-picker-indicator {
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0;
   margin: 0;
+  line-height: normal;
+  vertical-align: middle;
+}
+
+.date-picker-native::-webkit-datetime-edit,
+.date-picker-native::-webkit-datetime-edit-fields-wrapper,
+.date-picker-native::-webkit-date-and-time-value {
   padding: 0;
-  opacity: 0.86;
+  margin: 0;
+  line-height: normal;
 }
 
 .field input::placeholder {
   color: rgba(255, 255, 255, 0.62);
 }
 
-.field input:focus {
+.field input:focus,
+.date-display-button:focus-visible {
   border-color: rgba(255, 255, 255, 0.32);
   box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08);
 }

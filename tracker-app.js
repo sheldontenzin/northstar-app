@@ -57,6 +57,14 @@ function formatLongDate(dateKey) {
   });
 }
 
+function formatDisplayDate(dateKey) {
+  return getDateFromKey(dateKey).toLocaleDateString(undefined, {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function formatShortDate(dateKey) {
   return getDateFromKey(dateKey).toLocaleDateString(undefined, {
     month: "short",
@@ -551,6 +559,7 @@ function WeightScreen({
 }) {
   const [chartMode, setChartMode] = useState("daily");
   const [showAllHistory, setShowAllHistory] = useState(false);
+  const dateInputRef = useRef(null);
   const sortedEntries = getWeightHistoryEntries(entries);
   const visibleEntries = getVisibleWeightHistoryEntries(entries, showAllHistory, 12);
   const hasEnoughAverageLogs = hasEnoughWeightLogsForAverage(entries);
@@ -558,6 +567,21 @@ function WeightScreen({
   const averageSummary = getRollingAverageSummary(entries);
   const goalMessage = getWeightGoalMessage(latestWeight);
   const showAverageEmptyState = chartMode === "average" && !hasEnoughAverageLogs;
+
+  function openDatePicker() {
+    const input = dateInputRef.current;
+    if (!input) {
+      return;
+    }
+
+    if (typeof input.showPicker === "function") {
+      input.showPicker();
+      return;
+    }
+
+    input.focus();
+    input.click();
+  }
 
   return (
     <section className="tracker-screen">
@@ -640,7 +664,20 @@ function WeightScreen({
         <div className="form-stack">
           <label className="field">
             <span>Date</span>
-            <input type="date" value={form.date} onChange={(event) => onFormChange("date", event.target.value)} />
+            <div className="date-field-wrap">
+              <button type="button" className="date-display-button" onClick={openDatePicker}>
+                {formatDisplayDate(form.date)}
+              </button>
+              <input
+                ref={dateInputRef}
+                className="date-picker-native"
+                type="date"
+                value={form.date}
+                onChange={(event) => onFormChange("date", event.target.value)}
+                aria-label="Select weight entry date"
+                tabIndex={-1}
+              />
+            </div>
           </label>
           <label className="field">
             <span>Weight</span>

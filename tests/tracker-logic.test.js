@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const {
   calculateStreak,
   getMonthCalendar,
+  normalizeGoalDays,
   setGoalCompletion,
   toggleGoalCompletion,
 } = require("../tracker-logic.js");
@@ -32,6 +33,55 @@ function testYesterdayCompletedTodayUnansweredKeepsStreakAlive() {
 
   const goalDays = setGoalCompletion({}, yesterdayKey, true);
   assert.equal(calculateStreak(goalDays, todayKey), 1);
+}
+
+function testThreeDayStreakIgnoresUnansweredToday() {
+  const todayKey = makeKey(0);
+  const yesterdayKey = makeKey(-1);
+  const twoDaysAgoKey = makeKey(-2);
+  const threeDaysAgoKey = makeKey(-3);
+
+  let goalDays = setGoalCompletion({}, threeDaysAgoKey, true);
+  goalDays = setGoalCompletion(goalDays, twoDaysAgoKey, true);
+  goalDays = setGoalCompletion(goalDays, yesterdayKey, true);
+
+  assert.equal(calculateStreak(goalDays, todayKey), 3);
+}
+
+function testThreeDayStreakBecomesFourWhenTodayIsYes() {
+  const todayKey = makeKey(0);
+  const yesterdayKey = makeKey(-1);
+  const twoDaysAgoKey = makeKey(-2);
+  const threeDaysAgoKey = makeKey(-3);
+
+  let goalDays = setGoalCompletion({}, threeDaysAgoKey, true);
+  goalDays = setGoalCompletion(goalDays, twoDaysAgoKey, true);
+  goalDays = setGoalCompletion(goalDays, yesterdayKey, true);
+  goalDays = setGoalCompletion(goalDays, todayKey, true);
+
+  assert.equal(calculateStreak(goalDays, todayKey), 4);
+}
+
+function testThreeDayStreakDropsToZeroWhenTodayIsNo() {
+  const todayKey = makeKey(0);
+  const yesterdayKey = makeKey(-1);
+  const twoDaysAgoKey = makeKey(-2);
+  const threeDaysAgoKey = makeKey(-3);
+
+  let goalDays = setGoalCompletion({}, threeDaysAgoKey, true);
+  goalDays = setGoalCompletion(goalDays, twoDaysAgoKey, true);
+  goalDays = setGoalCompletion(goalDays, yesterdayKey, true);
+  goalDays = setGoalCompletion(goalDays, todayKey, false);
+
+  assert.equal(calculateStreak(goalDays, todayKey), 0);
+}
+
+function testMissedYesterdayBreaksStreakEvenIfTodayIsUnanswered() {
+  const todayKey = makeKey(0);
+  const twoDaysAgoKey = makeKey(-2);
+
+  const goalDays = setGoalCompletion({}, twoDaysAgoKey, true);
+  assert.equal(calculateStreak(goalDays, todayKey), 0);
 }
 
 function testEditingPastDateBreaksStreak() {
@@ -102,13 +152,32 @@ function testCalendarDisablesFutureDates() {
   assert.equal(futureCell.isFuture, true);
 }
 
+function testLegacyTruthyValuesDoNotMismatchDotsAndStreaks() {
+  const todayKey = makeKey(0);
+  const yesterdayKey = makeKey(-1);
+  const twoDaysAgoKey = makeKey(-2);
+
+  const legacyGoalDays = normalizeGoalDays({
+    [twoDaysAgoKey]: "true",
+    [yesterdayKey]: "true",
+  });
+
+  assert.equal(legacyGoalDays[yesterdayKey], true);
+  assert.equal(calculateStreak(legacyGoalDays, todayKey), 2);
+}
+
 testMarkingYesterdayRestoresStreak();
 testYesterdayCompletedTodayUnansweredKeepsStreakAlive();
+testThreeDayStreakIgnoresUnansweredToday();
+testThreeDayStreakBecomesFourWhenTodayIsYes();
+testThreeDayStreakDropsToZeroWhenTodayIsNo();
+testMissedYesterdayBreaksStreakEvenIfTodayIsUnanswered();
 testEditingPastDateBreaksStreak();
 testTodayTrackingStillWorks();
 testYesterdayIncompleteTodayUnansweredIsZero();
 testEditingOneGoalMapDoesNotAffectAnother();
 testTogglingCalendarDateRestoresAndClearsCompletion();
 testCalendarDisablesFutureDates();
+testLegacyTruthyValuesDoNotMismatchDotsAndStreaks();
 
 console.log("tracker-logic tests passed");

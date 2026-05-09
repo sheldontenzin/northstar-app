@@ -18,6 +18,31 @@
     return getLocalDateKey(date);
   }
 
+  function normalizeGoalValue(value) {
+    if (value === true || value === "true" || value === 1 || value === "1") {
+      return true;
+    }
+
+    if (value === false || value === "false" || value === 0 || value === "0") {
+      return false;
+    }
+
+    return undefined;
+  }
+
+  function normalizeGoalDays(goalDays) {
+    if (!goalDays || typeof goalDays !== "object") {
+      return {};
+    }
+
+    return Object.fromEntries(
+      Object.entries(goalDays).flatMap(([key, value]) => {
+        const normalized = normalizeGoalValue(value);
+        return normalized === undefined ? [] : [[key, normalized]];
+      })
+    );
+  }
+
   function getRecentDateOptions(days = 7, baseDate = new Date()) {
     const normalizedBase = new Date(baseDate);
     normalizedBase.setHours(0, 0, 0, 0);
@@ -43,6 +68,7 @@
   }
 
   function getMonthCalendar(baseDate = new Date(), goalDays = {}) {
+    const normalizedGoalDays = normalizeGoalDays(goalDays);
     const current = new Date(baseDate);
     current.setHours(0, 0, 0, 0);
 
@@ -65,7 +91,7 @@
         key,
         label: String(day),
         isFuture: date > current,
-        isCompleted: goalDays[key] === true,
+        isCompleted: normalizedGoalDays[key] === true,
       });
     }
 
@@ -85,19 +111,31 @@
   }
 
   function calculateStreak(goalDays, referenceDateKey = getLocalDateKey()) {
-    if (!goalDays) {
+    const normalizedGoalDays = normalizeGoalDays(goalDays);
+
+    if (!normalizedGoalDays) {
       return 0;
     }
 
-    const hasAnsweredReferenceDay = Object.prototype.hasOwnProperty.call(goalDays, referenceDateKey);
+    const getDayState = (dateKey) => {
+      if (!Object.prototype.hasOwnProperty.call(normalizedGoalDays, dateKey)) {
+        return "unanswered";
+      }
+
+      return normalizedGoalDays[dateKey] === true ? "yes" : "no";
+    };
+
+    const referenceState = getDayState(referenceDateKey);
+
+    if (referenceState === "no") {
+      return 0;
+    }
+
     let streak = 0;
-    let currentKey = hasAnsweredReferenceDay ? referenceDateKey : shiftDateKey(referenceDateKey, -1);
+    let currentKey =
+      referenceState === "yes" ? referenceDateKey : shiftDateKey(referenceDateKey, -1);
 
-    if (hasAnsweredReferenceDay && goalDays[referenceDateKey] !== true) {
-      return 0;
-    }
-
-    while (goalDays[currentKey] === true) {
+    while (getDayState(currentKey) === "yes") {
       streak += 1;
       currentKey = shiftDateKey(currentKey, -1);
     }
@@ -107,15 +145,16 @@
 
   function setGoalCompletion(goalDays, dateKey, value) {
     return {
-      ...(goalDays || {}),
+      ...normalizeGoalDays(goalDays),
       [dateKey]: Boolean(value),
     };
   }
 
   function toggleGoalCompletion(goalDays, dateKey) {
+    const normalizedGoalDays = normalizeGoalDays(goalDays);
     return {
-      ...(goalDays || {}),
-      [dateKey]: goalDays?.[dateKey] === true ? false : true,
+      ...normalizedGoalDays,
+      [dateKey]: normalizedGoalDays?.[dateKey] === true ? false : true,
     };
   }
 
@@ -123,6 +162,8 @@
     calculateStreak,
     getMonthCalendar,
     getRecentDateOptions,
+    normalizeGoalDays,
+    normalizeGoalValue,
     setGoalCompletion,
     toggleGoalCompletion,
   };

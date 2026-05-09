@@ -1,5 +1,5 @@
 const { useEffect, useRef, useState } = React;
-const { calculateStreak, getMonthCalendar, toggleGoalCompletion } = window.PolarisLogic;
+const { calculateStreak, getMonthCalendar, normalizeGoalDays, normalizeGoalValue, toggleGoalCompletion } = window.PolarisLogic;
 
 const STORAGE_KEY = "polaris-lite-v3";
 const WEIGHT_GOAL_MIN = 135;
@@ -100,8 +100,8 @@ function loadAppState() {
 
     return {
       weightEntries: Array.isArray(parsed?.weightEntries) ? parsed.weightEntries.map(normalizeWeightEntry) : [],
-      deepWorkDays: parsed?.deepWorkDays && typeof parsed.deepWorkDays === "object" ? parsed.deepWorkDays : {},
-      workoutDays: parsed?.workoutDays && typeof parsed.workoutDays === "object" ? parsed.workoutDays : {},
+      deepWorkDays: normalizeGoalDays(parsed?.deepWorkDays),
+      workoutDays: normalizeGoalDays(parsed?.workoutDays),
     };
   } catch (error) {
     return fallback;
@@ -171,7 +171,7 @@ function getRecentConsistency(deepWorkDays, days = 14) {
     return {
       key,
       short: date.toLocaleDateString(undefined, { weekday: "narrow" }),
-      done: Boolean(deepWorkDays[key]),
+      done: normalizeGoalValue(deepWorkDays[key]) === true,
     };
   });
 }

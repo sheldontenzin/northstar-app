@@ -176,6 +176,13 @@
     });
   }
 
+  function getDayDifference(leftDateKey, rightDateKey) {
+    const left = getDateFromKey(leftDateKey);
+    const right = getDateFromKey(rightDateKey);
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    return Math.round((left - right) / millisecondsPerDay);
+  }
+
   function formatShortDate(dateKey) {
     return getDateFromKey(dateKey).toLocaleDateString(undefined, {
       month: "short",
@@ -198,7 +205,7 @@
   function getRollingWeightAverageSeries(entries, limit = 12) {
     const sorted = sortWeightEntries(entries, "asc");
     const unit = sorted[sorted.length - 1]?.unit || "lb";
-    const points = sorted.map((entry, index) => {
+    const rawPoints = sorted.map((entry, index) => {
       const currentDate = getDateFromKey(entry.date);
       const windowStart = new Date(currentDate);
       windowStart.setDate(currentDate.getDate() - 6);
@@ -218,20 +225,41 @@
           : null;
 
       return {
+        key: entry.date,
         label: formatShortDate(entry.date),
         value: average,
+        sampleCount: windowValues.length,
       };
-    }).slice(-limit);
+    });
+
+    const points = [];
+    rawPoints.forEach((point, index) => {
+      const previousPoint = rawPoints[index - 1];
+      if (previousPoint && getDayDifference(point.key, previousPoint.key) > 6) {
+        points.push({
+          key: `gap-${point.key}`,
+          label: "",
+          value: null,
+          sampleCount: 0,
+          isGap: true,
+        });
+      }
+
+      points.push(point);
+    });
+
+    const trimmedPoints = points.slice(-limit);
 
     return {
-      labels: points.map((point) => point.label),
-      values: points.map((point) => point.value),
+      labels: trimmedPoints.map((point) => point.label),
+      values: trimmedPoints.map((point) => point.value),
+      sampleCounts: trimmedPoints.map((point) => point.sampleCount),
       unit,
       label: "7-day average",
     };
   }
 
-  function hasEnoughWeightLogsForAverage(entries, minimumLogs = 3) {
+  function hasEnoughWeightLogsForAverage(entries, minimumLogs = 1) {
     return sortWeightEntries(entries, "asc")
       .map((entry) => toNumber(entry.weight))
       .filter((value) => value !== null).length >= minimumLogs;
@@ -246,7 +274,11 @@
   function getRollingAverageSummary(entries) {
     const series = getRollingWeightAverageSeries(entries);
     const validPoints = series.values
-      .map((value, index) => ({ value, label: series.labels[index] }))
+      .map((value, index) => ({
+        value,
+        label: series.labels[index],
+        sampleCount: series.sampleCounts?.[index] || 0,
+      }))
       .filter((point) => point.value !== null);
 
     if (!validPoints.length) {
@@ -254,12 +286,14 @@
         currentAverage: null,
         previousAverage: null,
         change: null,
+        currentSampleCount: 0,
         unit: series.unit,
         label: series.label,
       };
     }
 
     const currentAverage = validPoints[validPoints.length - 1].value;
+    const currentSampleCount = validPoints[validPoints.length - 1].sampleCount;
     const previousAverage = validPoints.length > 1 ? validPoints[validPoints.length - 2].value : null;
     const change =
       previousAverage !== null && currentAverage !== null
@@ -270,6 +304,7 @@
       currentAverage,
       previousAverage,
       change,
+      currentSampleCount,
       unit: series.unit,
       label: series.label,
     };

@@ -552,6 +552,13 @@ p {
   line-height: 1.05;
 }
 
+.average-summary__note {
+  margin-top: 8px;
+  color: var(--text-soft);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
 .average-summary__change {
   margin-top: 8px;
   color: var(--muted);

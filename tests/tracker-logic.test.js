@@ -181,10 +181,18 @@ function makeWeightEntries() {
   ];
 }
 
+function makeSparseWeightEntries() {
+  return [
+    { date: "2026-04-02", weight: 152, unit: "lb", createdAt: 1 },
+    { date: "2026-04-21", weight: 145, unit: "lb", createdAt: 2 },
+  ];
+}
+
 function testRollingAverageCalculatesFromMultipleLogs() {
   const series = getRollingWeightAverageSeries(makeWeightEntries(), 12);
   assert.deepEqual(series.labels, ["May 1", "May 2", "May 4", "May 8"]);
   assert.deepEqual(series.values.map((value) => Number(value.toFixed(2))), [150, 149.5, 149, 148]);
+  assert.deepEqual(series.sampleCounts, [1, 2, 3, 3]);
 }
 
 function testMissingDaysDoNotBreakRollingAverage() {
@@ -213,7 +221,8 @@ function testWeightSeriesModeReturnsAverageDataset() {
 
 function testAverageUiConditionAppearsWhenLogsExist() {
   assert.equal(hasEnoughWeightLogsForAverage(makeWeightEntries()), true);
-  assert.equal(hasEnoughWeightLogsForAverage(makeWeightEntries().slice(0, 2)), false);
+  assert.equal(hasEnoughWeightLogsForAverage(makeWeightEntries().slice(0, 2)), true);
+  assert.equal(hasEnoughWeightLogsForAverage([]), false);
 }
 
 function testLatestRollingAverageSummaryMatchesChartData() {
@@ -230,6 +239,34 @@ function testPreviousAverageComparisonWorks() {
   assert.equal(Number(summary.currentAverage.toFixed(1)), 148.0);
   assert.equal(Number(summary.previousAverage.toFixed(1)), 149.0);
   assert.equal(Number(summary.change.toFixed(1)), -1.0);
+}
+
+function testFarApartDatesAreNotAveragedTogether() {
+  const series = getRollingWeightAverageSeries(makeSparseWeightEntries(), 12);
+  const summary = getRollingAverageSummary(makeSparseWeightEntries());
+
+  assert.deepEqual(series.values, [152, null, 145]);
+  assert.deepEqual(series.sampleCounts, [1, 0, 1]);
+  assert.equal(Number(summary.currentAverage.toFixed(1)), 145.0);
+  assert.equal(summary.currentSampleCount, 1);
+}
+
+function testSevenEntriesAcrossMultipleWeeksAreNotOneWindow() {
+  const entries = [
+    { date: "2026-04-01", weight: 154, unit: "lb", createdAt: 1 },
+    { date: "2026-04-05", weight: 153, unit: "lb", createdAt: 2 },
+    { date: "2026-04-12", weight: 151, unit: "lb", createdAt: 3 },
+    { date: "2026-04-18", weight: 150, unit: "lb", createdAt: 4 },
+    { date: "2026-04-21", weight: 149, unit: "lb", createdAt: 5 },
+    { date: "2026-04-25", weight: 148, unit: "lb", createdAt: 6 },
+    { date: "2026-04-30", weight: 147, unit: "lb", createdAt: 7 },
+  ];
+
+  const series = getRollingWeightAverageSeries(entries, 20);
+  const validValues = series.values.filter((value) => value !== null);
+
+  assert.ok(validValues.includes(147.5));
+  assert.ok(!validValues.includes((154 + 153 + 151 + 150 + 149 + 148 + 147) / 7));
 }
 
 testMarkingYesterdayRestoresStreak();
@@ -253,5 +290,7 @@ testWeightSeriesModeReturnsAverageDataset();
 testAverageUiConditionAppearsWhenLogsExist();
 testLatestRollingAverageSummaryMatchesChartData();
 testPreviousAverageComparisonWorks();
+testFarApartDatesAreNotAveragedTogether();
+testSevenEntriesAcrossMultipleWeeksAreNotOneWindow();
 
 console.log("tracker-logic tests passed");

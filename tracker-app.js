@@ -285,7 +285,7 @@ function WeightChart({ labels, values, unit, seriesLabel }) {
             pointHoverBackgroundColor: "#ead2e6",
             pointHoverBorderColor: "rgba(255, 255, 255, 0.9)",
             pointHoverBorderWidth: 1.5,
-            spanGaps: true,
+            spanGaps: false,
           },
         ],
       },
@@ -595,6 +595,9 @@ function WeightScreen({
             <p className="average-summary__label">Current 7-day average</p>
             <p className="average-summary__value">
               {averageSummary.currentAverage.toFixed(1)} {averageSummary.unit}
+            </p>
+            <p className="average-summary__note">
+              Based on {averageSummary.currentSampleCount} weigh-in{averageSummary.currentSampleCount === 1 ? "" : "s"} from the most recent 7 calendar days.
             </p>
             {averageSummary.change !== null ? (
               <p className="average-summary__change">

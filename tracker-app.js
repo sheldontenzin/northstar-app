@@ -1,5 +1,15 @@
 const { useEffect, useRef, useState } = React;
-const { calculateStreak, getMonthCalendar, normalizeGoalDays, normalizeGoalValue, toggleGoalCompletion } = window.PolarisLogic;
+const {
+  calculateStreak,
+  getDailyWeightSeries,
+  getLatestWeightEntry,
+  getMonthCalendar,
+  getRollingWeightAverageSeries,
+  normalizeGoalDays,
+  normalizeGoalValue,
+  sortWeightEntries,
+  toggleGoalCompletion,
+} = window.PolarisLogic;
 
 const STORAGE_KEY = "polaris-lite-v3";
 const WEIGHT_GOAL_MIN = 135;
@@ -114,26 +124,6 @@ function saveAppState(state) {
   } catch (error) {
     // ignore storage failures
   }
-}
-
-function getSortedWeightEntries(entries, direction = "desc") {
-  return [...entries].sort((left, right) => {
-    const dateDelta = new Date(left.date) - new Date(right.date);
-    const createdDelta = (left.createdAt || 0) - (right.createdAt || 0);
-    const delta = dateDelta || createdDelta;
-    return direction === "asc" ? delta : -delta;
-  });
-}
-
-function getWeightChartSeries(entries) {
-  const sorted = getSortedWeightEntries(entries, "asc").slice(-12);
-  const unit = sorted[sorted.length - 1]?.unit || "lb";
-
-  return {
-    labels: sorted.map((entry) => formatShortDate(entry.date)),
-    values: sorted.map((entry) => toNumber(entry.weight)),
-    unit,
-  };
 }
 
 function getWeightGoalMessage(entry) {
@@ -553,8 +543,12 @@ function WeightScreen({
   onEdit,
   onDelete,
 }) {
-  const sortedEntries = getSortedWeightEntries(entries, "desc");
-  const chartSeries = getWeightChartSeries(entries);
+  const [chartMode, setChartMode] = useState("daily");
+  const sortedEntries = sortWeightEntries(entries, "desc");
+  const chartSeries =
+    chartMode === "average"
+      ? getRollingWeightAverageSeries(entries)
+      : getDailyWeightSeries(entries);
   const goalMessage = getWeightGoalMessage(latestWeight);
 
   return (
@@ -574,9 +568,26 @@ function WeightScreen({
             <p className="eyebrow">Weight</p>
             <h2>Weight over time</h2>
           </div>
+          <div className="chart-toggle" aria-label="Weight chart mode">
+            <button
+              type="button"
+              className={`chart-toggle__button ${chartMode === "daily" ? "active" : ""}`}
+              onClick={() => setChartMode("daily")}
+            >
+              Daily
+            </button>
+            <button
+              type="button"
+              className={`chart-toggle__button ${chartMode === "average" ? "active" : ""}`}
+              onClick={() => setChartMode("average")}
+            >
+              7-day average
+            </button>
+          </div>
         </div>
 
         <WeightChart labels={chartSeries.labels} values={chartSeries.values} unit={chartSeries.unit} />
+        <p className="chart-helper">Daily weight moves around. Weekly average shows the real trend.</p>
         <p className="goal-note">{goalMessage}</p>
       </article>
 
@@ -666,7 +677,7 @@ function App() {
     return () => window.clearTimeout(timeoutId);
   }, [celebration]);
 
-  const latestWeight = getSortedWeightEntries(appState.weightEntries, "desc")[0] || null;
+  const latestWeight = getLatestWeightEntry(appState.weightEntries);
   const todayKey = getLocalDateKey();
   const editorGoal = goalEditor.goal;
   const editorGoalDays =

@@ -30,6 +30,15 @@
     return undefined;
   }
 
+  function toNumber(value) {
+    if (value === "" || value === null || value === undefined) {
+      return null;
+    }
+
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
   function normalizeGoalDays(goalDays) {
     if (!goalDays || typeof goalDays !== "object") {
       return {};
@@ -158,13 +167,85 @@
     };
   }
 
+  function sortWeightEntries(entries, direction = "desc") {
+    return [...(entries || [])].sort((left, right) => {
+      const dateDelta = new Date(left.date) - new Date(right.date);
+      const createdDelta = (left.createdAt || 0) - (right.createdAt || 0);
+      const delta = dateDelta || createdDelta;
+      return direction === "asc" ? delta : -delta;
+    });
+  }
+
+  function formatShortDate(dateKey) {
+    return getDateFromKey(dateKey).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+  }
+
+  function getDailyWeightSeries(entries, limit = 12) {
+    const sorted = sortWeightEntries(entries, "asc").slice(-limit);
+    const unit = sorted[sorted.length - 1]?.unit || "lb";
+
+    return {
+      labels: sorted.map((entry) => formatShortDate(entry.date)),
+      values: sorted.map((entry) => toNumber(entry.weight)),
+      unit,
+      label: "Daily",
+    };
+  }
+
+  function getRollingWeightAverageSeries(entries, limit = 12) {
+    const sorted = sortWeightEntries(entries, "asc");
+    const unit = sorted[sorted.length - 1]?.unit || "lb";
+    const points = sorted.map((entry, index) => {
+      const currentDate = getDateFromKey(entry.date);
+      const windowStart = new Date(currentDate);
+      windowStart.setDate(currentDate.getDate() - 6);
+
+      const windowValues = sorted
+        .slice(0, index + 1)
+        .filter((candidate) => {
+          const candidateDate = getDateFromKey(candidate.date);
+          return candidateDate >= windowStart && candidateDate <= currentDate;
+        })
+        .map((candidate) => toNumber(candidate.weight))
+        .filter((value) => value !== null);
+
+      const average =
+        windowValues.length > 0
+          ? windowValues.reduce((sum, value) => sum + value, 0) / windowValues.length
+          : null;
+
+      return {
+        label: formatShortDate(entry.date),
+        value: average,
+      };
+    }).slice(-limit);
+
+    return {
+      labels: points.map((point) => point.label),
+      values: points.map((point) => point.value),
+      unit,
+      label: "7-day average",
+    };
+  }
+
+  function getLatestWeightEntry(entries) {
+    return sortWeightEntries(entries, "desc")[0] || null;
+  }
+
   const api = {
     calculateStreak,
+    getDailyWeightSeries,
+    getLatestWeightEntry,
     getMonthCalendar,
     getRecentDateOptions,
+    getRollingWeightAverageSeries,
     normalizeGoalDays,
     normalizeGoalValue,
     setGoalCompletion,
+    sortWeightEntries,
     toggleGoalCompletion,
   };
 

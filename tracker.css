@@ -490,6 +490,33 @@ p {
   justify-content: space-between;
 }
 
+.chart-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+}
+
+.chart-toggle__button {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chart-toggle__button.active {
+  background: rgba(255, 255, 255, 0.22);
+  color: var(--text);
+}
+
 .section-head h2 {
   margin-top: 12px;
   font-size: clamp(1.7rem, 7vw, 2.25rem);
@@ -523,6 +550,13 @@ p {
   color: var(--text-soft);
   font-size: 0.94rem;
   line-height: 1.58;
+}
+
+.chart-helper {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.65;
 }
 
 .celebration-banner {

@@ -1,7 +1,10 @@
 const assert = require("node:assert/strict");
 const {
   calculateStreak,
+  getDailyWeightSeries,
+  getLatestWeightEntry,
   getMonthCalendar,
+  getRollingWeightAverageSeries,
   normalizeGoalDays,
   setGoalCompletion,
   toggleGoalCompletion,
@@ -166,6 +169,39 @@ function testLegacyTruthyValuesDoNotMismatchDotsAndStreaks() {
   assert.equal(calculateStreak(legacyGoalDays, todayKey), 2);
 }
 
+function makeWeightEntries() {
+  return [
+    { date: "2026-05-01", weight: 150, unit: "lb", createdAt: 1 },
+    { date: "2026-05-02", weight: 149, unit: "lb", createdAt: 2 },
+    { date: "2026-05-04", weight: 148, unit: "lb", createdAt: 3 },
+    { date: "2026-05-08", weight: 147, unit: "lb", createdAt: 4 },
+  ];
+}
+
+function testRollingAverageCalculatesFromMultipleLogs() {
+  const series = getRollingWeightAverageSeries(makeWeightEntries(), 12);
+  assert.deepEqual(series.labels, ["May 1", "May 2", "May 4", "May 8"]);
+  assert.deepEqual(series.values.map((value) => Number(value.toFixed(2))), [150, 149.5, 149, 148]);
+}
+
+function testMissingDaysDoNotBreakRollingAverage() {
+  const series = getRollingWeightAverageSeries(makeWeightEntries(), 12);
+  assert.equal(series.values[2], 149);
+  assert.equal(series.values[3], 148);
+}
+
+function testDailySeriesStillRendersSeparately() {
+  const series = getDailyWeightSeries(makeWeightEntries(), 12);
+  assert.deepEqual(series.values, [150, 149, 148, 147]);
+  assert.equal(series.label, "Daily");
+}
+
+function testLatestWeightUsesMostRecentLog() {
+  const latest = getLatestWeightEntry(makeWeightEntries());
+  assert.equal(latest.date, "2026-05-08");
+  assert.equal(latest.weight, 147);
+}
+
 testMarkingYesterdayRestoresStreak();
 testYesterdayCompletedTodayUnansweredKeepsStreakAlive();
 testThreeDayStreakIgnoresUnansweredToday();
@@ -179,5 +215,9 @@ testEditingOneGoalMapDoesNotAffectAnother();
 testTogglingCalendarDateRestoresAndClearsCompletion();
 testCalendarDisablesFutureDates();
 testLegacyTruthyValuesDoNotMismatchDotsAndStreaks();
+testRollingAverageCalculatesFromMultipleLogs();
+testMissingDaysDoNotBreakRollingAverage();
+testDailySeriesStillRendersSeparately();
+testLatestWeightUsesMostRecentLog();
 
 console.log("tracker-logic tests passed");

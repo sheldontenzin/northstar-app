@@ -26,6 +26,14 @@ function testMarkingYesterdayRestoresStreak() {
   assert.equal(calculateStreak(goalDays, todayKey), 2);
 }
 
+function testYesterdayCompletedTodayUnansweredKeepsStreakAlive() {
+  const todayKey = makeKey(0);
+  const yesterdayKey = makeKey(-1);
+
+  const goalDays = setGoalCompletion({}, yesterdayKey, true);
+  assert.equal(calculateStreak(goalDays, todayKey), 1);
+}
+
 function testEditingPastDateBreaksStreak() {
   const todayKey = makeKey(0);
   const yesterdayKey = makeKey(-1);
@@ -53,6 +61,14 @@ function testTodayTrackingStillWorks() {
   assert.equal(calculateStreak(goalDays, todayKey), 0);
 }
 
+function testYesterdayIncompleteTodayUnansweredIsZero() {
+  const todayKey = makeKey(0);
+  const yesterdayKey = makeKey(-1);
+
+  const goalDays = setGoalCompletion({}, yesterdayKey, false);
+  assert.equal(calculateStreak(goalDays, todayKey), 0);
+}
+
 function testEditingOneGoalMapDoesNotAffectAnother() {
   const yesterdayKey = makeKey(-1);
 
@@ -67,14 +83,14 @@ function testTogglingCalendarDateRestoresAndClearsCompletion() {
   const todayKey = makeKey(0);
   const yesterdayKey = makeKey(-1);
 
-  let goalDays = setGoalCompletion({}, todayKey, true);
+  let goalDays = {};
   goalDays = toggleGoalCompletion(goalDays, yesterdayKey);
   assert.equal(goalDays[yesterdayKey], true);
-  assert.equal(calculateStreak(goalDays, todayKey), 2);
+  assert.equal(calculateStreak(goalDays, todayKey), 1);
 
   goalDays = toggleGoalCompletion(goalDays, yesterdayKey);
   assert.equal(goalDays[yesterdayKey], false);
-  assert.equal(calculateStreak(goalDays, todayKey), 1);
+  assert.equal(calculateStreak(goalDays, todayKey), 0);
 }
 
 function testCalendarDisablesFutureDates() {
@@ -87,8 +103,10 @@ function testCalendarDisablesFutureDates() {
 }
 
 testMarkingYesterdayRestoresStreak();
+testYesterdayCompletedTodayUnansweredKeepsStreakAlive();
 testEditingPastDateBreaksStreak();
 testTodayTrackingStillWorks();
+testYesterdayIncompleteTodayUnansweredIsZero();
 testEditingOneGoalMapDoesNotAffectAnother();
 testTogglingCalendarDateRestoresAndClearsCompletion();
 testCalendarDisablesFutureDates();

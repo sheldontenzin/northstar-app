@@ -85,10 +85,19 @@
   }
 
   function calculateStreak(goalDays, referenceDateKey = getLocalDateKey()) {
-    let streak = 0;
-    let currentKey = referenceDateKey;
+    if (!goalDays) {
+      return 0;
+    }
 
-    while (goalDays && goalDays[currentKey] === true) {
+    const hasAnsweredReferenceDay = Object.prototype.hasOwnProperty.call(goalDays, referenceDateKey);
+    let streak = 0;
+    let currentKey = hasAnsweredReferenceDay ? referenceDateKey : shiftDateKey(referenceDateKey, -1);
+
+    if (hasAnsweredReferenceDay && goalDays[referenceDateKey] !== true) {
+      return 0;
+    }
+
+    while (goalDays[currentKey] === true) {
       streak += 1;
       currentKey = shiftDateKey(currentKey, -1);
     }

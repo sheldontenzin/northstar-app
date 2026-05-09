@@ -4,7 +4,8 @@ const {
   getDailyWeightSeries,
   getLatestWeightEntry,
   getMonthCalendar,
-  getRollingWeightAverageSeries,
+  getWeightSeriesForMode,
+  hasEnoughWeightLogsForAverage,
   normalizeGoalDays,
   normalizeGoalValue,
   sortWeightEntries,
@@ -225,7 +226,7 @@ function ConfettiOverlay({ active }) {
   );
 }
 
-function WeightChart({ labels, values, unit }) {
+function WeightChart({ labels, values, unit, seriesLabel }) {
   const canvasRef = useRef(null);
   const chartRef = useRef(null);
   const hasData = values.some((value) => value !== null);
@@ -240,9 +241,10 @@ function WeightChart({ labels, values, unit }) {
     }
 
     const context = canvasRef.current.getContext("2d");
+    const isAverageSeries = seriesLabel === "7-day average";
     const gradient = context.createLinearGradient(0, 0, 0, 260);
-    gradient.addColorStop(0, "rgba(209, 170, 204, 0.24)");
-    gradient.addColorStop(0.55, "rgba(199, 176, 221, 0.12)");
+    gradient.addColorStop(0, isAverageSeries ? "rgba(232, 196, 208, 0.24)" : "rgba(209, 170, 204, 0.24)");
+    gradient.addColorStop(0.55, isAverageSeries ? "rgba(214, 193, 224, 0.14)" : "rgba(199, 176, 221, 0.12)");
     gradient.addColorStop(1, "rgba(255, 255, 255, 0.015)");
     const finiteValues = values.filter((value) => value !== null);
     const rangeMin = Math.min(...finiteValues, WEIGHT_GOAL_MIN);
@@ -272,10 +274,10 @@ function WeightChart({ labels, values, unit }) {
           },
           {
             data: values,
-            borderColor: "#d4afd4",
+            borderColor: isAverageSeries ? "#e7c0d0" : "#d4afd4",
             backgroundColor: gradient,
-            borderWidth: 2.5,
-            tension: 0.46,
+            borderWidth: isAverageSeries ? 3 : 2.5,
+            tension: isAverageSeries ? 0.56 : 0.46,
             fill: true,
             pointRadius: 0,
             pointHoverRadius: 4,
@@ -342,7 +344,7 @@ function WeightChart({ labels, values, unit }) {
         chartRef.current = null;
       }
     };
-  }, [labels, values, unit, hasData]);
+  }, [labels, values, unit, hasData, seriesLabel]);
 
   if (!window.Chart || !hasData) {
     return <p className="empty-copy">No weight entries yet. Add one neutral data point.</p>;
@@ -545,11 +547,10 @@ function WeightScreen({
 }) {
   const [chartMode, setChartMode] = useState("daily");
   const sortedEntries = sortWeightEntries(entries, "desc");
-  const chartSeries =
-    chartMode === "average"
-      ? getRollingWeightAverageSeries(entries)
-      : getDailyWeightSeries(entries);
+  const hasEnoughAverageLogs = hasEnoughWeightLogsForAverage(entries);
+  const chartSeries = getWeightSeriesForMode(entries, chartMode);
   const goalMessage = getWeightGoalMessage(latestWeight);
+  const showAverageEmptyState = chartMode === "average" && !hasEnoughAverageLogs;
 
   return (
     <section className="tracker-screen">
@@ -586,7 +587,17 @@ function WeightScreen({
           </div>
         </div>
 
-        <WeightChart labels={chartSeries.labels} values={chartSeries.values} unit={chartSeries.unit} />
+        <p className="chart-mode-label">Viewing: {chartSeries.label}</p>
+        {showAverageEmptyState ? (
+          <p className="empty-copy">Add a few more weigh-ins to see your weekly trend.</p>
+        ) : (
+          <WeightChart
+            labels={chartSeries.labels}
+            values={chartSeries.values}
+            unit={chartSeries.unit}
+            seriesLabel={chartSeries.label}
+          />
+        )}
         <p className="chart-helper">Daily weight moves around. Weekly average shows the real trend.</p>
         <p className="goal-note">{goalMessage}</p>
       </article>

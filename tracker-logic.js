@@ -231,6 +231,18 @@
     };
   }
 
+  function hasEnoughWeightLogsForAverage(entries, minimumLogs = 3) {
+    return sortWeightEntries(entries, "asc")
+      .map((entry) => toNumber(entry.weight))
+      .filter((value) => value !== null).length >= minimumLogs;
+  }
+
+  function getWeightSeriesForMode(entries, mode = "daily", limit = 12) {
+    return mode === "average"
+      ? getRollingWeightAverageSeries(entries, limit)
+      : getDailyWeightSeries(entries, limit);
+  }
+
   function getLatestWeightEntry(entries) {
     return sortWeightEntries(entries, "desc")[0] || null;
   }
@@ -242,6 +254,8 @@
     getMonthCalendar,
     getRecentDateOptions,
     getRollingWeightAverageSeries,
+    getWeightSeriesForMode,
+    hasEnoughWeightLogsForAverage,
     normalizeGoalDays,
     normalizeGoalValue,
     setGoalCompletion,

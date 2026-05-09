@@ -5,6 +5,8 @@ const {
   getLatestWeightEntry,
   getMonthCalendar,
   getRollingWeightAverageSeries,
+  getWeightSeriesForMode,
+  hasEnoughWeightLogsForAverage,
   normalizeGoalDays,
   setGoalCompletion,
   toggleGoalCompletion,
@@ -202,6 +204,17 @@ function testLatestWeightUsesMostRecentLog() {
   assert.equal(latest.weight, 147);
 }
 
+function testWeightSeriesModeReturnsAverageDataset() {
+  const series = getWeightSeriesForMode(makeWeightEntries(), "average");
+  assert.equal(series.label, "7-day average");
+  assert.deepEqual(series.values.map((value) => Number(value.toFixed(2))), [150, 149.5, 149, 148]);
+}
+
+function testAverageUiConditionAppearsWhenLogsExist() {
+  assert.equal(hasEnoughWeightLogsForAverage(makeWeightEntries()), true);
+  assert.equal(hasEnoughWeightLogsForAverage(makeWeightEntries().slice(0, 2)), false);
+}
+
 testMarkingYesterdayRestoresStreak();
 testYesterdayCompletedTodayUnansweredKeepsStreakAlive();
 testThreeDayStreakIgnoresUnansweredToday();
@@ -219,5 +232,7 @@ testRollingAverageCalculatesFromMultipleLogs();
 testMissingDaysDoNotBreakRollingAverage();
 testDailySeriesStillRendersSeparately();
 testLatestWeightUsesMostRecentLog();
+testWeightSeriesModeReturnsAverageDataset();
+testAverageUiConditionAppearsWhenLogsExist();
 
 console.log("tracker-logic tests passed");

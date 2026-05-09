@@ -4,6 +4,7 @@ const {
   getDailyWeightSeries,
   getLatestWeightEntry,
   getMonthCalendar,
+  getRollingAverageSummary,
   getRollingWeightAverageSeries,
   getWeightSeriesForMode,
   hasEnoughWeightLogsForAverage,
@@ -215,6 +216,22 @@ function testAverageUiConditionAppearsWhenLogsExist() {
   assert.equal(hasEnoughWeightLogsForAverage(makeWeightEntries().slice(0, 2)), false);
 }
 
+function testLatestRollingAverageSummaryMatchesChartData() {
+  const series = getRollingWeightAverageSeries(makeWeightEntries(), 12);
+  const summary = getRollingAverageSummary(makeWeightEntries());
+
+  assert.equal(Number(summary.currentAverage.toFixed(1)), Number(series.values.at(-1).toFixed(1)));
+  assert.equal(summary.unit, "lb");
+}
+
+function testPreviousAverageComparisonWorks() {
+  const summary = getRollingAverageSummary(makeWeightEntries());
+
+  assert.equal(Number(summary.currentAverage.toFixed(1)), 148.0);
+  assert.equal(Number(summary.previousAverage.toFixed(1)), 149.0);
+  assert.equal(Number(summary.change.toFixed(1)), -1.0);
+}
+
 testMarkingYesterdayRestoresStreak();
 testYesterdayCompletedTodayUnansweredKeepsStreakAlive();
 testThreeDayStreakIgnoresUnansweredToday();
@@ -234,5 +251,7 @@ testDailySeriesStillRendersSeparately();
 testLatestWeightUsesMostRecentLog();
 testWeightSeriesModeReturnsAverageDataset();
 testAverageUiConditionAppearsWhenLogsExist();
+testLatestRollingAverageSummaryMatchesChartData();
+testPreviousAverageComparisonWorks();
 
 console.log("tracker-logic tests passed");

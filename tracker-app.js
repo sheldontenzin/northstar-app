@@ -4,6 +4,7 @@ const {
   getDailyWeightSeries,
   getLatestWeightEntry,
   getMonthCalendar,
+  getRollingAverageSummary,
   getWeightSeriesForMode,
   hasEnoughWeightLogsForAverage,
   normalizeGoalDays,
@@ -549,6 +550,7 @@ function WeightScreen({
   const sortedEntries = sortWeightEntries(entries, "desc");
   const hasEnoughAverageLogs = hasEnoughWeightLogsForAverage(entries);
   const chartSeries = getWeightSeriesForMode(entries, chartMode);
+  const averageSummary = getRollingAverageSummary(entries);
   const goalMessage = getWeightGoalMessage(latestWeight);
   const showAverageEmptyState = chartMode === "average" && !hasEnoughAverageLogs;
 
@@ -588,8 +590,25 @@ function WeightScreen({
         </div>
 
         <p className="chart-mode-label">Viewing: {chartSeries.label}</p>
+        {chartMode === "average" && hasEnoughAverageLogs ? (
+          <div className="average-summary" aria-label="Current 7-day average">
+            <p className="average-summary__label">Current 7-day average</p>
+            <p className="average-summary__value">
+              {averageSummary.currentAverage.toFixed(1)} {averageSummary.unit}
+            </p>
+            {averageSummary.change !== null ? (
+              <p className="average-summary__change">
+                {averageSummary.change < 0
+                  ? `Down ${Math.abs(averageSummary.change).toFixed(1)} ${averageSummary.unit} from last average`
+                  : averageSummary.change > 0
+                    ? `Up ${Math.abs(averageSummary.change).toFixed(1)} ${averageSummary.unit} from last average`
+                    : `No change from last average`}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         {showAverageEmptyState ? (
-          <p className="empty-copy">Add a few more weigh-ins to see your weekly trend.</p>
+          <p className="empty-copy">Add a few more weigh-ins to see your 7-day average.</p>
         ) : (
           <WeightChart
             labels={chartSeries.labels}

@@ -243,6 +243,38 @@
       : getDailyWeightSeries(entries, limit);
   }
 
+  function getRollingAverageSummary(entries) {
+    const series = getRollingWeightAverageSeries(entries);
+    const validPoints = series.values
+      .map((value, index) => ({ value, label: series.labels[index] }))
+      .filter((point) => point.value !== null);
+
+    if (!validPoints.length) {
+      return {
+        currentAverage: null,
+        previousAverage: null,
+        change: null,
+        unit: series.unit,
+        label: series.label,
+      };
+    }
+
+    const currentAverage = validPoints[validPoints.length - 1].value;
+    const previousAverage = validPoints.length > 1 ? validPoints[validPoints.length - 2].value : null;
+    const change =
+      previousAverage !== null && currentAverage !== null
+        ? currentAverage - previousAverage
+        : null;
+
+    return {
+      currentAverage,
+      previousAverage,
+      change,
+      unit: series.unit,
+      label: series.label,
+    };
+  }
+
   function getLatestWeightEntry(entries) {
     return sortWeightEntries(entries, "desc")[0] || null;
   }
@@ -253,6 +285,7 @@
     getLatestWeightEntry,
     getMonthCalendar,
     getRecentDateOptions,
+    getRollingAverageSummary,
     getRollingWeightAverageSeries,
     getWeightSeriesForMode,
     hasEnoughWeightLogsForAverage,

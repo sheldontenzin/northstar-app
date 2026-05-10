@@ -72,6 +72,13 @@ function formatShortDate(dateKey) {
   });
 }
 
+function getGreetingLabel(date = new Date()) {
+  const hour = date.getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
 function toNumber(value) {
   if (value === "" || value === null || value === undefined) {
     return null;
@@ -255,9 +262,9 @@ function WeightChart({ labels, values, unit, seriesLabel }) {
     const context = canvasRef.current.getContext("2d");
     const isAverageSeries = seriesLabel === "7-day average";
     const gradient = context.createLinearGradient(0, 0, 0, 260);
-    gradient.addColorStop(0, isAverageSeries ? "rgba(232, 196, 208, 0.24)" : "rgba(209, 170, 204, 0.24)");
-    gradient.addColorStop(0.55, isAverageSeries ? "rgba(214, 193, 224, 0.14)" : "rgba(199, 176, 221, 0.12)");
-    gradient.addColorStop(1, "rgba(255, 255, 255, 0.015)");
+    gradient.addColorStop(0, isAverageSeries ? "rgba(184, 193, 255, 0.24)" : "rgba(146, 165, 255, 0.18)");
+    gradient.addColorStop(0.55, isAverageSeries ? "rgba(132, 144, 245, 0.12)" : "rgba(110, 124, 232, 0.08)");
+    gradient.addColorStop(1, "rgba(8, 15, 57, 0.01)");
     const finiteValues = values.filter((value) => value !== null);
     const rangeMin = Math.min(...finiteValues, WEIGHT_GOAL_MIN);
     const rangeMax = Math.max(...finiteValues, WEIGHT_GOAL_MAX);
@@ -272,29 +279,29 @@ function WeightChart({ labels, values, unit, seriesLabel }) {
         datasets: [
           {
             data: labels.map(() => WEIGHT_GOAL_MIN),
-            borderColor: "rgba(255, 223, 204, 0.22)",
+            borderColor: "rgba(246, 207, 221, 0.22)",
             borderWidth: 1.2,
             borderDash: [5, 7],
             pointRadius: 0,
           },
           {
             data: labels.map(() => WEIGHT_GOAL_MAX),
-            borderColor: "rgba(255, 223, 204, 0.22)",
+            borderColor: "rgba(246, 207, 221, 0.22)",
             borderWidth: 1.2,
             borderDash: [5, 7],
             pointRadius: 0,
           },
           {
             data: values,
-            borderColor: isAverageSeries ? "#e7c0d0" : "#d4afd4",
+            borderColor: isAverageSeries ? "#dbe2ff" : "#a8b8ff",
             backgroundColor: gradient,
             borderWidth: isAverageSeries ? 3 : 2.5,
             tension: isAverageSeries ? 0.56 : 0.46,
             fill: true,
             pointRadius: 0,
             pointHoverRadius: 4,
-            pointHoverBackgroundColor: "#ead2e6",
-            pointHoverBorderColor: "rgba(255, 255, 255, 0.9)",
+            pointHoverBackgroundColor: "#e6ebff",
+            pointHoverBorderColor: "rgba(12, 28, 101, 0.95)",
             pointHoverBorderWidth: 1.5,
             spanGaps: false,
           },
@@ -306,8 +313,8 @@ function WeightChart({ labels, values, unit, seriesLabel }) {
           legend: { display: false },
           tooltip: {
             displayColors: false,
-            backgroundColor: "rgba(255, 255, 255, 0.18)",
-            borderColor: "rgba(255, 255, 255, 0.18)",
+            backgroundColor: "rgba(13, 28, 100, 0.96)",
+            borderColor: "rgba(193, 204, 255, 0.16)",
             borderWidth: 1,
             titleColor: "rgba(255, 255, 255, 0.98)",
             bodyColor: "rgba(255, 255, 255, 0.92)",
@@ -324,7 +331,7 @@ function WeightChart({ labels, values, unit, seriesLabel }) {
             border: { display: false },
             grid: { display: false, drawTicks: false },
             ticks: {
-              color: "rgba(255, 255, 255, 0.52)",
+              color: "rgba(219, 226, 255, 0.46)",
               font: { size: 10.5, weight: 500 },
               maxRotation: 0,
               autoSkipPadding: 14,
@@ -336,11 +343,11 @@ function WeightChart({ labels, values, unit, seriesLabel }) {
             max: suggestedMax,
             border: { display: false },
             grid: {
-              color: "rgba(255, 255, 255, 0.06)",
+              color: "rgba(214, 223, 255, 0.07)",
               drawTicks: false,
             },
             ticks: {
-              color: "rgba(255, 255, 255, 0.5)",
+              color: "rgba(219, 226, 255, 0.44)",
               font: { size: 10.5, weight: 500 },
               padding: 10,
               maxTicksLimit: 5,
@@ -442,9 +449,10 @@ function HomeScreen({
     <section className="home">
       <article className="card intro-card intro-card-hero">
         <p className="eyebrow">Polaris</p>
+        <p className="hero-greeting">{getGreetingLabel()}, Sheldon</p>
         <h1>Track weight and keep the day alive.</h1>
         <p className="intro-copy">
-          Weight progress on one side. No-zero-days consistency on the other.
+          Weight progress, no-zero-days momentum, and a calmer place to keep your word.
         </p>
       </article>
 

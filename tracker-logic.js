@@ -314,6 +314,31 @@
     return sortWeightEntries(entries, "desc")[0] || null;
   }
 
+  function getLowestWeightEntry(entries) {
+    const sorted = sortWeightEntries(entries, "desc");
+    let lowestEntry = null;
+    let lowestValue = null;
+
+    sorted.forEach((entry) => {
+      const weight = toNumber(entry.weight);
+      if (weight === null) {
+        return;
+      }
+
+      if (lowestValue === null || weight < lowestValue) {
+        lowestValue = weight;
+        lowestEntry = entry;
+      }
+    });
+
+    return lowestEntry
+      ? {
+          ...lowestEntry,
+          weight: lowestValue,
+        }
+      : null;
+  }
+
   function getWeightHistoryEntries(entries) {
     return sortWeightEntries(entries, "desc");
   }
@@ -340,6 +365,7 @@
     getWeightHistoryEntries,
     getWeightLogDiagnostics,
     getLatestWeightEntry,
+    getLowestWeightEntry,
     getMonthCalendar,
     getRecentDateOptions,
     getRollingAverageSummary,

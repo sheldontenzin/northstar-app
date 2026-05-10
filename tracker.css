@@ -554,6 +554,28 @@ p {
   text-transform: uppercase;
 }
 
+.weight-stat-line {
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+  color: var(--text-soft);
+}
+
+.weight-stat-line__label {
+  color: var(--muted-label);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.weight-stat-line__value {
+  color: var(--text);
+  font-size: 0.96rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
 .average-summary {
   margin-top: 12px;
   padding: 16px 18px;

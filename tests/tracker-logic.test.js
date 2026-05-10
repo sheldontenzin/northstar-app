@@ -7,6 +7,7 @@ const {
   getWeightHistoryEntries,
   getWeightLogDiagnostics,
   getMonthCalendar,
+  getLowestWeightEntry,
   getRollingAverageSummary,
   getRollingWeightAverageSeries,
   getWeightSeriesForMode,
@@ -216,6 +217,37 @@ function testLatestWeightUsesMostRecentLog() {
   assert.equal(latest.weight, 147);
 }
 
+function testLowestWeightCalculatedFromAllEntries() {
+  const lowest = getLowestWeightEntry(makeWeightEntries());
+  assert.equal(lowest.date, "2026-05-08");
+  assert.equal(lowest.weight, 147);
+}
+
+function testLowestWeightTieUsesMostRecentMatchingDate() {
+  const entries = [
+    { date: "2026-05-02", weight: 145.2, unit: "lb", createdAt: 1 },
+    { date: "2026-05-09", weight: 145.2, unit: "lb", createdAt: 2 },
+    { date: "2026-05-05", weight: 146.1, unit: "lb", createdAt: 3 },
+  ];
+
+  const lowest = getLowestWeightEntry(entries);
+  assert.equal(lowest.date, "2026-05-09");
+  assert.equal(lowest.weight, 145.2);
+}
+
+function testGraphFiltersDoNotAffectLowestWeight() {
+  const entries = [
+    { date: "2026-04-01", weight: 144.8, unit: "lb", createdAt: 1 },
+    { date: "2026-05-01", weight: 149.2, unit: "lb", createdAt: 2 },
+    { date: "2026-05-08", weight: 147.3, unit: "lb", createdAt: 3 },
+  ];
+
+  getWeightSeriesForMode(entries, "daily", 2);
+  const lowest = getLowestWeightEntry(entries);
+  assert.equal(lowest.date, "2026-04-01");
+  assert.equal(lowest.weight, 144.8);
+}
+
 function testWeightSeriesModeReturnsAverageDataset() {
   const series = getWeightSeriesForMode(makeWeightEntries(), "average");
   assert.equal(series.label, "7-day average");
@@ -333,6 +365,9 @@ testRollingAverageCalculatesFromMultipleLogs();
 testMissingDaysDoNotBreakRollingAverage();
 testDailySeriesStillRendersSeparately();
 testLatestWeightUsesMostRecentLog();
+testLowestWeightCalculatedFromAllEntries();
+testLowestWeightTieUsesMostRecentMatchingDate();
+testGraphFiltersDoNotAffectLowestWeight();
 testWeightSeriesModeReturnsAverageDataset();
 testAverageUiConditionAppearsWhenLogsExist();
 testLatestRollingAverageSummaryMatchesChartData();

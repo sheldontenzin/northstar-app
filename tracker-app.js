@@ -3,6 +3,7 @@ const {
   calculateStreak,
   getDailyWeightSeries,
   getLatestWeightEntry,
+  getLowestWeightEntry,
   getVisibleWeightHistoryEntries,
   getWeightHistoryEntries,
   getWeightLogDiagnostics,
@@ -165,11 +166,6 @@ function getWeightGoalMessage(entry) {
   }
 
   return `Goal range: ${WEIGHT_GOAL_MIN}-${WEIGHT_GOAL_MAX} lb · You're in range`;
-}
-
-function getLowestWeight(entries) {
-  const weights = entries.map((entry) => toNumber(entry.weight)).filter((value) => value !== null);
-  return weights.length ? Math.min(...weights) : null;
 }
 
 function getRecentConsistency(deepWorkDays, days = 14) {
@@ -574,6 +570,7 @@ function WeightScreen({
   const chartSeries = getWeightSeriesForMode(entries, chartMode);
   const averageSummary = getRollingAverageSummary(entries);
   const goalMessage = getWeightGoalMessage(latestWeight);
+  const lowestWeightEntry = getLowestWeightEntry(entries);
   const showAverageEmptyState = chartMode === "average" && !hasEnoughAverageLogs;
 
   function openDatePicker() {
@@ -625,6 +622,20 @@ function WeightScreen({
             </button>
           </div>
         </div>
+
+        {lowestWeightEntry ? (
+          <p className="weight-stat-line">
+            <span className="weight-stat-line__label">Lowest weight</span>
+            <span className="weight-stat-line__value">
+              {Number(lowestWeightEntry.weight).toFixed(1)} {lowestWeightEntry.unit} · {formatDisplayDate(lowestWeightEntry.date)}
+            </span>
+          </p>
+        ) : (
+          <p className="weight-stat-line">
+            <span className="weight-stat-line__label">Lowest weight</span>
+            <span className="weight-stat-line__value">No weight entries yet</span>
+          </p>
+        )}
 
         <p className="chart-mode-label">Viewing: {chartSeries.label}</p>
         {chartMode === "average" && hasEnoughAverageLogs ? (
@@ -821,9 +832,10 @@ function App() {
       return;
     }
 
-    const previousLowest = getLowestWeight(
+    const previousLowestEntry = getLowestWeightEntry(
       appState.weightEntries.filter((entry) => entry.id !== weightForm.id)
     );
+    const previousLowest = previousLowestEntry ? toNumber(previousLowestEntry.weight) : null;
 
     const nextEntry = normalizeWeightEntry({
       ...weightForm,
